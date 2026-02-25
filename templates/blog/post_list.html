@@ -1,0 +1,92 @@
+{% extends 'base_public.html' %}
+{% block title %}Blog | Selt Company{% endblock %}
+{% block content %}
+<style>
+  .blog-card-shadow {
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  }
+</style>
+
+<section class="max-w-7xl mx-auto px-4 py-10 lg:py-12">
+  {% if featured_post %}
+  <article class="relative overflow-hidden rounded-2xl border border-primary/25 min-h-[330px] lg:min-h-[430px]">
+    {% if featured_post.cover_image %}
+    <img src="{{ featured_post.cover_image.url }}" alt="{{ featured_post.title }}" class="absolute inset-0 w-full h-full object-cover">
+    {% elif featured_post.images.first %}
+    <img src="{{ featured_post.images.first.image.url }}" alt="{{ featured_post.title }}" class="absolute inset-0 w-full h-full object-cover">
+    {% else %}
+    <div class="absolute inset-0 bg-gradient-to-br from-[#0a2b4b] via-[#0d3a61] to-[#08213b]"></div>
+    {% endif %}
+    <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/80 to-primary/35"></div>
+
+    <div class="relative z-10 p-7 sm:p-9 lg:p-14 max-w-3xl text-white">
+      <span class="inline-block bg-accent text-primary text-[11px] font-black tracking-[0.18em] uppercase rounded-full px-4 py-1.5">Editor's Choice</span>
+      <h1 class="mt-5 text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.02]">{{ featured_post.title }}</h1>
+      <p class="mt-5 text-white/85 text-lg">{{ featured_post.excerpt }}</p>
+      <a href="{{ featured_post.get_absolute_url }}" class="inline-flex mt-8 bg-white text-primary px-6 py-3 rounded-xl font-bold">Read Full Article</a>
+    </div>
+  </article>
+  {% endif %}
+
+  <div class="mt-8 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center gap-2 text-sm">
+      <button class="px-4 py-2 rounded-full bg-primary text-white font-semibold">All Topics</button>
+      <button class="px-4 py-2 rounded-full border border-slate-300 text-slate-600">Electrical Safety</button>
+      <button class="px-4 py-2 rounded-full border border-slate-300 text-slate-600">Energy Saving</button>
+      <button class="px-4 py-2 rounded-full border border-slate-300 text-slate-600">Smart Home</button>
+      <button class="px-4 py-2 rounded-full border border-slate-300 text-slate-600">Case Studies</button>
+    </div>
+
+    <form method="get" class="flex items-center gap-2">
+      <input name="q" value="{{ query }}" placeholder="Search insights..." class="w-56 sm:w-72 rounded-xl border-slate-300 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
+      <button class="bg-primary text-white px-4 py-2.5 rounded-xl font-bold">Search</button>
+    </form>
+  </div>
+
+  <div class="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for post in posts %}
+    <article class="rounded-2xl brand-soft-card brand-hover overflow-hidden blog-card-shadow">
+      {% if post.cover_image %}
+      <img src="{{ post.cover_image.url }}" class="w-full h-56 object-cover" alt="{{ post.title }}">
+      {% elif post.images.first %}
+      <img src="{{ post.images.first.image.url }}" class="w-full h-56 object-cover" alt="{{ post.title }}">
+      {% else %}
+      <div class="w-full h-56 bg-gradient-to-br from-[#325d82] to-[#0f2f50]"></div>
+      {% endif %}
+
+      <div class="p-5">
+        <p class="text-[11px] tracking-[0.16em] uppercase text-accent font-bold">Electrical Safety</p>
+        <h2 class="mt-3 text-[31px] leading-tight font-black text-primary">{{ post.title }}</h2>
+        <p class="mt-3 text-slate-600">{{ post.excerpt }}</p>
+        <a href="{{ post.get_absolute_url }}" class="inline-flex mt-5 font-bold text-primary">READ STORY →</a>
+      </div>
+    </article>
+    {% empty %}
+    <article class="rounded-2xl brand-soft-card p-8 md:col-span-2 lg:col-span-3 text-center">
+      <h2 class="text-2xl font-black text-primary">No articles available</h2>
+      <p class="text-slate-600 mt-2">Publish posts from the CRM module and they will appear here.</p>
+    </article>
+    {% endfor %}
+  </div>
+
+  <div class="mt-10 text-center">
+    <a href="{% url 'blog:list' %}" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold">Load More Articles <span>⌄</span></a>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 pb-12 lg:pb-14">
+  <div class="rounded-2xl bg-primary text-white p-8 sm:p-12 text-center relative overflow-hidden">
+    <div class="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-white/10"></div>
+    <div class="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/10"></div>
+    <div class="relative z-10 max-w-3xl mx-auto">
+      <h2 class="text-5xl font-black">Stay Powered Up</h2>
+      <p class="mt-3 text-white/80">Get the latest electrical safety tips, efficiency guides, and industry news delivered directly to your inbox every month.</p>
+      <form class="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
+        <input type="email" placeholder="Your work email" class="w-full sm:w-[460px] rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/50">
+        <button type="button" class="bg-accent text-primary px-6 py-3 rounded-xl font-bold">Subscribe Now</button>
+      </form>
+      <p class="mt-3 text-xs text-white/60">By subscribing, you agree to our Privacy Policy and consent to receive updates.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

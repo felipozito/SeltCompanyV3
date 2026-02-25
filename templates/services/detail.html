@@ -1,0 +1,44 @@
+{% extends 'base_public.html' %}
+{% block title %}{{ service.title }} | Servicios{% endblock %}
+{% block content %}
+<section class="max-w-7xl mx-auto px-4 py-10 lg:py-14">
+  <a href="{% url 'services:gallery' %}" class="inline-flex items-center text-sm font-bold text-primary hover:text-accent">← Volver a servicios</a>
+
+  <div class="mt-5 grid lg:grid-cols-2 gap-8 items-start">
+    <div class="min-w-0">
+      <p class="text-[11px] tracking-[0.2em] uppercase text-accent font-bold">Service Detail</p>
+      <h1 class="mt-2 text-4xl sm:text-5xl font-black text-primary leading-tight break-words">{{ service.title }}</h1>
+      <p class="mt-4 text-slate-600 text-lg break-words [overflow-wrap:anywhere]">{{ service.description }}</p>
+      {% if service.detailed_information %}
+      <div class="mt-4 rounded-xl brand-soft-card p-4">
+        <p class="text-xs uppercase tracking-[0.16em] font-bold text-slate-500">Detailed Information</p>
+        <p class="mt-2 text-slate-700 whitespace-pre-line break-words [overflow-wrap:anywhere]">{{ service.detailed_information }}</p>
+      </div>
+      {% endif %}
+
+      {% if service.features.all %}
+      <div class="mt-6 grid sm:grid-cols-2 gap-3">
+        {% for feature in service.features.all %}
+        <div class="rounded-xl brand-soft-card px-4 py-3 text-slate-700 break-words [overflow-wrap:anywhere]">• {{ feature.text }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="mt-7 flex items-center flex-wrap gap-3">
+        <a href="{% url 'home' %}#contact" class="bg-primary text-white px-6 py-3 rounded-xl font-bold">Solicitar este servicio</a>
+        {% if service.price %}
+        <span class="text-primary font-black text-lg">Desde ${{ service.price }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {% for image in service.images.all|slice:":4" %}
+      <img src="{{ image.image.url }}" alt="{{ image.title|default:service.title }}" class="rounded-xl w-full aspect-[4/3] object-cover">
+      {% empty %}
+      <div class="rounded-xl bg-gradient-to-br from-[#2f5a7f] to-[#0d2a46] aspect-[4/3]"></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

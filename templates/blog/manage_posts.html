@@ -1,0 +1,238 @@
+{% extends 'base_crm.html' %}
+{% block title %}Gestionar Blog{% endblock %}
+{% block content %}
+<style>
+  .blog-modal-scroll {
+    max-height: min(86vh, 920px);
+  }
+</style>
+
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1 class="text-3xl lg:text-4xl font-black text-primary">Blog Management</h1>
+    <p class="text-slate-600 mt-1">Create, publish, and maintain blog content from the CRM.</p>
+  </div>
+  <button id="open-post-modal" type="button" class="inline-flex items-center gap-2 bg-primary text-white px-5 py-3 rounded-xl font-bold shadow-[0_10px_25px_rgba(0,31,61,0.2)]">
+    <span class="text-lg leading-none">＋</span>
+    <span>Add New Post</span>
+  </button>
+</div>
+
+<section class="mt-6 bg-white border border-slate-200 rounded-2xl p-6">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-slate-500 border-b border-slate-200">
+          <th class="py-3">Post</th>
+          <th>Status</th>
+          <th>Featured</th>
+          <th>Gallery</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for post in posts %}
+        <tr class="border-b border-slate-100">
+          <td class="py-4">
+            <p class="font-semibold text-primary">{{ post.title }}</p>
+            <p class="text-xs text-slate-500 mt-0.5">{{ post.excerpt|truncatechars:70 }}</p>
+          </td>
+          <td>
+            {% if post.is_published %}
+            <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">Published</span>
+            {% else %}
+            <span class="px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-600">Draft</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if post.is_featured %}
+            <span class="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700">Featured</span>
+            {% else %}
+            <span class="text-slate-400">-</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'blog:manage_images' post.id %}" class="font-bold text-primary hover:underline">Manage</a>
+            <span class="text-slate-500">({{ post.images.count }})</span>
+          </td>
+          <td>
+            <div class="flex items-center justify-end gap-2">
+              <a class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700" href="{% url 'blog:edit' post.id %}">Edit</a>
+              <form method="post" action="{% url 'blog:delete' post.id %}" onsubmit="return confirm('¿Eliminar publicación?')">
+                {% csrf_token %}
+                <button class="px-3 py-1.5 rounded-lg bg-red-50 text-red-700">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td class="py-6 text-slate-500" colspan="5">No posts yet. Click "Add New Post" to create the first one.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div id="post-modal-overlay" class="fixed inset-0 bg-slate-900/45 backdrop-blur-sm z-40 hidden"></div>
+
+<div id="post-modal" class="fixed inset-0 z-50 hidden p-4 sm:p-8 lg:p-12">
+  <div class="h-full flex items-start sm:items-center justify-center overflow-y-auto">
+    <section class="w-full max-w-4xl bg-white rounded-3xl border border-slate-200 shadow-[0_30px_80px_rgba(15,23,42,0.35)]">
+      <header class="px-6 sm:px-9 py-6 border-b border-slate-200 flex items-center justify-between gap-4">
+        <h2 class="text-3xl font-black text-primary">Add New Blog Post</h2>
+        <button id="close-post-modal" type="button" class="text-slate-400 hover:text-slate-700 text-3xl leading-none">×</button>
+      </header>
+
+      <form id="post-form" method="post" enctype="multipart/form-data" class="px-6 sm:px-9 py-6 sm:py-8 space-y-5 blog-modal-scroll overflow-y-auto">
+        {% csrf_token %}
+
+        <div>
+          <label for="id_title" class="block text-sm font-bold text-slate-900 mb-1.5">Post Title</label>
+          {{ form.title }}
+          {{ form.title.errors }}
+        </div>
+
+        <div>
+          <label for="id_excerpt" class="block text-sm font-bold text-slate-900 mb-1.5">Excerpt</label>
+          {{ form.excerpt }}
+          {{ form.excerpt.errors }}
+        </div>
+
+        <div>
+          <label for="id_cover_image" class="block text-sm font-bold text-slate-900 mb-2">Cover Image</label>
+          {{ form.cover_image }}
+          {{ form.cover_image.errors }}
+        </div>
+
+        <div>
+          <label for="id_content" class="block text-sm font-bold text-slate-900 mb-1.5">Content</label>
+          <div id="quill-editor" class="bg-white rounded-xl border border-slate-300 min-h-[220px]"></div>
+          {{ form.content }}
+          {{ form.content.errors }}
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label for="id_caption" class="block text-sm font-bold text-slate-900 mb-1.5">Gallery Caption Prefix</label>
+            {{ image_form.caption }}
+            {{ image_form.caption.errors }}
+            <p class="text-xs text-slate-500 mt-1">If multiple images are uploaded, numbering is automatic.</p>
+          </div>
+          <div>
+            <label for="id_order_start" class="block text-sm font-bold text-slate-900 mb-1.5">Gallery Initial Order</label>
+            {{ image_form.order_start }}
+            {{ image_form.order_start.errors }}
+          </div>
+        </div>
+
+        <div>
+          <label for="id_images" class="block text-sm font-bold text-slate-900 mb-2">Gallery Images</label>
+          <label for="id_images" class="block rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-7 text-center cursor-pointer hover:bg-slate-100 transition">
+            <div class="mx-auto mb-3 h-11 w-11 rounded-xl bg-slate-200 text-slate-600 grid place-items-center text-lg">🖼</div>
+            <p class="font-semibold text-slate-700">Click or drag to upload</p>
+            <p class="text-xs text-slate-500 mt-1">You can upload one or multiple images.</p>
+            <p id="blog-file-hint" class="text-xs text-primary font-semibold mt-2"></p>
+            <span class="hidden">{{ image_form.images }}</span>
+          </label>
+          {{ image_form.images.errors }}
+        </div>
+
+        <div class="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200">
+          <div class="flex flex-wrap items-center gap-4">
+            <label class="inline-flex items-center gap-2 text-sm text-slate-700">{{ form.is_featured }} Featured</label>
+            <label class="inline-flex items-center gap-2 text-sm text-slate-700">{{ form.is_published }} Published</label>
+          </div>
+          <div class="flex items-center gap-3 ml-auto">
+            <button id="cancel-post-modal" type="button" class="px-5 py-3 rounded-xl text-slate-600 font-bold hover:bg-slate-100">Cancel</button>
+            <button class="px-7 py-3 rounded-xl bg-primary text-white font-extrabold shadow-[0_10px_25px_rgba(0,31,61,0.24)]">Save Post</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+{{ form.errors|json_script:"post-form-errors" }}
+{{ image_form.errors|json_script:"post-image-form-errors" }}
+
+<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<script>
+  const modal = document.getElementById('post-modal');
+  const overlay = document.getElementById('post-modal-overlay');
+  const openBtn = document.getElementById('open-post-modal');
+  const closeBtn = document.getElementById('close-post-modal');
+  const cancelBtn = document.getElementById('cancel-post-modal');
+  const form = document.getElementById('post-form');
+  const contentField = document.getElementById('id_content');
+  const imageInput = document.getElementById('id_images');
+  const fileHint = document.getElementById('blog-file-hint');
+  const postErrors = JSON.parse(document.getElementById('post-form-errors').textContent || '{}');
+  const imageErrors = JSON.parse(document.getElementById('post-image-form-errors').textContent || '{}');
+
+  const openModal = () => {
+    modal.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+  };
+
+  const closeModal = () => {
+    modal.classList.add('hidden');
+    overlay.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  };
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  overlay?.addEventListener('click', closeModal);
+
+  if (Object.keys(postErrors).length > 0 || Object.keys(imageErrors).length > 0) {
+    openModal();
+  }
+
+  if (contentField) {
+    contentField.classList.add('hidden');
+    contentField.removeAttribute('required');
+
+    const quill = new Quill('#quill-editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline'],
+          [{ align: [] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['link', 'blockquote', 'code-block'],
+          ['clean']
+        ]
+      }
+    });
+
+    quill.root.innerHTML = contentField.value || '';
+    quill.on('text-change', () => {
+      contentField.value = quill.root.innerHTML;
+    });
+
+    form?.addEventListener('submit', (event) => {
+      contentField.value = quill.root.innerHTML;
+      if (!quill.getText().trim()) {
+        event.preventDefault();
+        alert('Debes escribir contenido para la publicación.');
+      }
+    });
+  }
+
+  imageInput?.addEventListener('change', (event) => {
+    const files = event.target.files || [];
+    if (!fileHint) return;
+    if (files.length === 0) {
+      fileHint.textContent = '';
+      return;
+    }
+    fileHint.textContent = files.length === 1 ? files[0].name : `${files.length} files selected`;
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends 'base_public.html' %}
+{% load static %}
+{% block title %}Servicios | Selt Company{% endblock %}
+{% block content %}
+<style>
+  .svc-card-shadow {
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.09);
+  }
+  .svc-dark-shadow {
+    box-shadow: 0 20px 60px rgba(2, 8, 23, 0.35);
+  }
+</style>
+
+<section class="max-w-7xl mx-auto px-4 pt-12 pb-6 text-center">
+  <p class="text-[11px] font-bold tracking-[0.22em] text-accent uppercase">Our Expertise</p>
+  <h1 class="mt-3 text-4xl sm:text-5xl font-black text-primary leading-tight">Comprehensive Electrical Solutions</h1>
+  <p class="mt-4 max-w-3xl mx-auto text-slate-600">
+    Delivering high-end electrical services with a focus on safety, efficiency, and modern technological integration across residential, commercial, and industrial sectors.
+  </p>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 pb-10 lg:pb-14 space-y-10">
+  {% for service in services %}
+  <article class="rounded-2xl brand-hover border {% if forloop.counter|divisibleby:2 %}border-primary/40 bg-primary text-white svc-dark-shadow{% else %}brand-soft-card svc-card-shadow{% endif %} p-5 sm:p-7 lg:p-8">
+    <div class="grid lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+      <div class="{% if forloop.counter|divisibleby:2 %}lg:order-2{% endif %}">
+        <div class="h-full rounded-xl {% if forloop.counter|divisibleby:2 %}bg-white/5 border border-white/15{% else %}bg-slate-50 border border-slate-200{% endif %} p-5 sm:p-6 flex flex-col">
+          <div class="h-8 w-8 rounded-md {% if forloop.counter|divisibleby:2 %}bg-accent text-primary{% else %}bg-accent/20 text-accent{% endif %} grid place-items-center font-black">⚡</div>
+          <h2 class="mt-4 text-2xl sm:text-3xl font-black {% if forloop.counter|divisibleby:2 %}text-white{% else %}text-primary{% endif %}">{{ service.title }}</h2>
+          <p class="mt-3 {% if forloop.counter|divisibleby:2 %}text-white/80{% else %}text-slate-600{% endif %}">{{ service.description }}</p>
+
+          <div class="mt-5 grid sm:grid-cols-2 gap-3 text-sm">
+            {% with service_features=service.features.all %}
+              {% if service_features %}
+                {% for feature in service_features|slice:":4" %}
+                <div class="rounded-lg px-3 py-2 {% if forloop.parentloop.counter|divisibleby:2 %}bg-white/10 text-white/90{% else %}bg-slate-100 text-slate-700{% endif %}">• {{ feature.text }}</div>
+                {% endfor %}
+              {% else %}
+                <div class="rounded-lg px-3 py-2 {% if forloop.counter|divisibleby:2 %}bg-white/10 text-white/90{% else %}bg-slate-100 text-slate-700{% endif %}">• {{ service.short_description }}</div>
+                <div class="rounded-lg px-3 py-2 {% if forloop.counter|divisibleby:2 %}bg-white/10 text-white/90{% else %}bg-slate-100 text-slate-700{% endif %}">• Certified safety compliance</div>
+                <div class="rounded-lg px-3 py-2 {% if forloop.counter|divisibleby:2 %}bg-white/10 text-white/90{% else %}bg-slate-100 text-slate-700{% endif %}">• Expert technical team</div>
+                <div class="rounded-lg px-3 py-2 {% if forloop.counter|divisibleby:2 %}bg-white/10 text-white/90{% else %}bg-slate-100 text-slate-700{% endif %}">• Maintenance and support plans</div>
+              {% endif %}
+            {% endwith %}
+          </div>
+
+          <div class="mt-6 flex items-center gap-3 flex-wrap">
+            <a href="#contact-services" class="px-5 py-2.5 rounded-lg font-bold {% if forloop.counter|divisibleby:2 %}bg-accent text-primary{% else %}bg-primary text-white{% endif %}">Request This Service</a>
+            {% if service.price %}
+            <span class="font-extrabold {% if forloop.counter|divisibleby:2 %}text-accent{% else %}text-primary{% endif %}">From ${{ service.price }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="{% if forloop.counter|divisibleby:2 %}lg:order-1{% endif %}">
+        {% with imgs=service.images.all %}
+        {% if imgs %}
+        <div class="grid grid-cols-2 gap-3 auto-rows-[120px] sm:auto-rows-[150px]">
+          {% for image in imgs|slice:":4" %}
+          <button type="button"
+                  class="service-image-trigger rounded-xl overflow-hidden border {% if forloop.parentloop.counter|divisibleby:2 %}border-white/20{% else %}border-slate-200{% endif %} text-left {% if forloop.first %}col-span-2 sm:col-span-1 sm:row-span-2{% endif %}"
+                  data-src="{{ image.image.url }}"
+                  data-title="{{ image.title|escape }}"
+                  data-detail="{{ image.detail|default:''|escape }}"
+                  data-service="{{ service.title|escape }}">
+            <img src="{{ image.image.url }}" alt="{{ image.title }}" class="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-300">
+          </button>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="grid grid-cols-2 gap-3 auto-rows-[120px] sm:auto-rows-[150px]">
+          <div class="rounded-xl {% if forloop.counter|divisibleby:2 %}bg-white/10 border border-white/15{% else %}bg-slate-100 border border-slate-200{% endif %}"></div>
+          <div class="rounded-xl {% if forloop.counter|divisibleby:2 %}bg-white/10 border border-white/15{% else %}bg-slate-100 border border-slate-200{% endif %}"></div>
+          <div class="rounded-xl {% if forloop.counter|divisibleby:2 %}bg-white/10 border border-white/15{% else %}bg-slate-100 border border-slate-200{% endif %}"></div>
+          <div class="rounded-xl {% if forloop.counter|divisibleby:2 %}bg-white/10 border border-white/15{% else %}bg-slate-100 border border-slate-200{% endif %}"></div>
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+  </article>
+  {% empty %}
+  <article class="rounded-2xl brand-soft-card p-8 text-center">
+    <h2 class="text-2xl font-black text-primary">No active services yet</h2>
+    <p class="text-slate-600 mt-2">Create and activate services from the CRM module to display them here.</p>
+    <a href="{% url 'crm:dashboard' %}" class="inline-block mt-5 bg-primary text-white px-5 py-2.5 rounded-lg font-bold">Go to CRM</a>
+  </article>
+  {% endfor %}
+</section>
+
+<section id="contact-services" class="max-w-7xl mx-auto px-4 pb-14">
+  <div class="rounded-2xl bg-[#c8a24c] p-8 sm:p-12 text-center">
+    <h2 class="text-4xl font-black text-primary">Ready to start your next project?</h2>
+    <p class="mt-3 text-primary/80 max-w-2xl mx-auto">Whether it's a small repair or a large-scale industrial installation, our certified electricians are ready to help.</p>
+    <div class="mt-7 flex flex-wrap justify-center gap-3">
+      <a href="{% url 'home' %}#contact" class="bg-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg">Contact Our Experts</a>
+      <a href="{% url 'services:gallery' %}" class="bg-white/70 text-primary px-6 py-3 rounded-lg font-bold">Browse All Services</a>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-primary text-white">
+  <div class="max-w-7xl mx-auto px-4 py-12 grid md:grid-cols-4 gap-8">
+    <div>
+      <img src="{% static 'brand/logo2.png' %}" alt="Selt Company" class="h-12 w-auto object-contain">
+      <p class="mt-3 text-sm text-white/70">Excellence in electrical engineering and installation since 1998.</p>
+    </div>
+    <div>
+      <h4 class="text-accent text-xs font-bold tracking-[0.16em] uppercase">Services</h4>
+      <div class="mt-3 space-y-2 text-sm text-white/80">
+        {% for service in services|slice:":5" %}
+        <p>{{ service.title }}</p>
+        {% empty %}
+        <p>Residential Wiring</p>
+        <p>Commercial Fit-outs</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <h4 class="text-accent text-xs font-bold tracking-[0.16em] uppercase">Company</h4>
+      <div class="mt-3 space-y-2 text-sm text-white/80">
+        <a href="{% url 'home' %}" class="block hover:text-accent">Home</a>
+        <a href="{% url 'services:gallery' %}" class="block hover:text-accent">Services</a>
+        <a href="{% url 'blog:list' %}" class="block hover:text-accent">Blog</a>
+        <a href="{% url 'crm:dashboard' %}" class="block hover:text-accent">CRM</a>
+      </div>
+    </div>
+    <div>
+      <h4 class="text-accent text-xs font-bold tracking-[0.16em] uppercase">Our Location</h4>
+      <div class="mt-3 rounded-xl bg-white/10 border border-white/15 h-28"></div>
+      <p class="mt-2 text-xs text-white/70">123 Power Grid Lane, Energy District</p>
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <div class="max-w-7xl mx-auto px-4 py-4 text-[11px] text-white/60 flex flex-wrap items-center justify-between gap-2">
+      <p>© 2026 Selt Company. All rights reserved.</p>
+      <div class="flex items-center gap-4">
+        <a href="#" class="hover:text-accent">Privacy Policy</a>
+        <a href="#" class="hover:text-accent">Terms of Service</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div id="service-gallery-modal" class="fixed inset-0 z-[100] hidden bg-black/80 p-4">
+  <div class="max-w-5xl mx-auto h-full flex flex-col justify-center">
+    <div class="flex justify-end mb-2">
+      <button id="gallery-close" type="button" class="bg-white text-slate-900 px-3 py-1 rounded-lg font-bold">Cerrar</button>
+    </div>
+    <div class="bg-white rounded-2xl overflow-hidden">
+      <div class="relative bg-slate-950">
+        <img id="gallery-image" src="" alt="Imagen de servicio" class="w-full h-[55vh] object-contain">
+        <button id="gallery-prev" type="button" class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 px-3 py-2 rounded-lg font-bold">←</button>
+        <button id="gallery-next" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 px-3 py-2 rounded-lg font-bold">→</button>
+      </div>
+      <div class="p-4 border-t border-slate-200">
+        <p id="gallery-service" class="text-xs font-bold tracking-wider text-slate-500 uppercase"></p>
+        <h3 id="gallery-title" class="text-xl font-extrabold text-primary mt-1"></h3>
+        <p id="gallery-detail" class="text-slate-600 mt-1"></p>
+        <p id="gallery-counter" class="text-sm text-slate-500 mt-2"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const items = [...document.querySelectorAll('.service-image-trigger')].map((el) => ({
+      src: el.dataset.src,
+      title: el.dataset.title,
+      detail: el.dataset.detail,
+      service: el.dataset.service,
+    }));
+
+    let currentIndex = -1;
+    const modal = document.getElementById('service-gallery-modal');
+    const image = document.getElementById('gallery-image');
+    const title = document.getElementById('gallery-title');
+    const detail = document.getElementById('gallery-detail');
+    const service = document.getElementById('gallery-service');
+    const counter = document.getElementById('gallery-counter');
+
+    function render(index) {
+      if (!items.length) return;
+      currentIndex = (index + items.length) % items.length;
+      const item = items[currentIndex];
+      image.src = item.src;
+      title.textContent = item.title || 'Imagen';
+      detail.textContent = item.detail || '';
+      service.textContent = item.service || '';
+      counter.textContent = `Imagen ${currentIndex + 1} de ${items.length}`;
+    }
+
+    function openModal(index) {
+      render(index);
+      modal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeModal() {
+      modal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    document.querySelectorAll('.service-image-trigger').forEach((btn, index) => {
+      btn.addEventListener('click', () => openModal(index));
+    });
+
+    document.getElementById('gallery-prev')?.addEventListener('click', () => render(currentIndex - 1));
+    document.getElementById('gallery-next')?.addEventListener('click', () => render(currentIndex + 1));
+    document.getElementById('gallery-close')?.addEventListener('click', closeModal);
+
+    modal?.addEventListener('click', (event) => {
+      if (event.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (modal.classList.contains('hidden')) return;
+      if (event.key === 'Escape') closeModal();
+      if (event.key === 'ArrowLeft') render(currentIndex - 1);
+      if (event.key === 'ArrowRight') render(currentIndex + 1);
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends 'base_crm.html' %}
+{% block title %}Gestionar Servicios{% endblock %}
+{% block content %}
+<style>
+  .svc-modal-scroll {
+    max-height: min(86vh, 920px);
+  }
+</style>
+
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1 class="text-3xl lg:text-4xl font-black text-primary">Service Management</h1>
+    <p class="text-slate-600 mt-1">Manage services and image gallery from one place.</p>
+  </div>
+  <button id="open-service-modal" type="button" class="inline-flex items-center gap-2 bg-primary text-white px-5 py-3 rounded-xl font-bold shadow-[0_10px_25px_rgba(0,31,61,0.2)]">
+    <span class="text-lg leading-none">＋</span>
+    <span>Add New Service</span>
+  </button>
+</div>
+
+<section class="mt-6 bg-white border border-slate-200 rounded-2xl p-6">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-slate-500 border-b border-slate-200">
+          <th class="py-3">Name</th>
+          <th>Price</th>
+          <th>Status</th>
+          <th>Images</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for service in services %}
+        <tr class="border-b border-slate-100">
+          <td class="py-4">
+            <p class="font-semibold text-primary">{{ service.title }}</p>
+            <p class="text-xs text-slate-500 mt-0.5">{{ service.short_description|truncatechars:56 }}</p>
+          </td>
+          <td class="font-semibold">{% if service.price %}${{ service.price }}{% else %}-{% endif %}</td>
+          <td>
+            {% if service.is_active %}
+            <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">Active</span>
+            {% else %}
+            <span class="px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-600">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'services:manage_images' service.id %}" class="font-bold text-primary hover:underline">Gallery</a>
+            <span class="text-slate-500">({{ service.images.count }})</span>
+          </td>
+          <td>
+            <div class="flex items-center justify-end gap-2">
+              <a class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700" href="{% url 'services:edit' service.id %}">Edit</a>
+              <form method="post" action="{% url 'services:delete' service.id %}" onsubmit="return confirm('¿Eliminar servicio?')">
+                {% csrf_token %}
+                <button class="px-3 py-1.5 rounded-lg bg-red-50 text-red-700">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td class="py-6 text-slate-500" colspan="5">No services yet. Click "Add New Service" to create the first one.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div id="service-modal-overlay" class="fixed inset-0 bg-slate-900/45 backdrop-blur-sm z-40 hidden"></div>
+
+<div id="service-modal" class="fixed inset-0 z-50 hidden p-4 sm:p-8 lg:p-12">
+  <div class="h-full flex items-start sm:items-center justify-center overflow-y-auto">
+    <section class="w-full max-w-3xl bg-white rounded-3xl border border-slate-200 shadow-[0_30px_80px_rgba(15,23,42,0.35)]">
+      <header class="px-6 sm:px-9 py-6 border-b border-slate-200 flex items-center justify-between gap-4">
+        <h2 class="text-3xl font-black text-primary">Add New Selt Service</h2>
+        <button id="close-service-modal" type="button" class="text-slate-400 hover:text-slate-700 text-3xl leading-none">×</button>
+      </header>
+
+      <form method="post" enctype="multipart/form-data" class="px-6 sm:px-9 py-6 sm:py-8 space-y-5 svc-modal-scroll overflow-y-auto">
+        {% csrf_token %}
+
+        <div>
+          <label for="id_title" class="block text-sm font-bold text-slate-900 mb-1.5">Service Name</label>
+          {{ form.title }}
+          {{ form.title.errors }}
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label for="id_short_description" class="block text-sm font-bold text-slate-900 mb-1.5">Category / Summary</label>
+            {{ form.short_description }}
+            {{ form.short_description.errors }}
+          </div>
+          <div>
+            <label for="id_price" class="block text-sm font-bold text-slate-900 mb-1.5">Base Price ($)</label>
+            {{ form.price }}
+            {{ form.price.errors }}
+          </div>
+        </div>
+
+        <div>
+          <label for="id_description" class="block text-sm font-bold text-slate-900 mb-1.5">Description</label>
+          {{ form.description }}
+          {{ form.description.errors }}
+        </div>
+
+        <div>
+          <label for="id_detailed_information" class="block text-sm font-bold text-slate-900 mb-1.5">Specific & Detailed Information</label>
+          {{ form.detailed_information }}
+          {{ form.detailed_information.errors }}
+        </div>
+
+        <div>
+          <p class="block text-sm font-bold text-slate-900 mb-2">Service Options</p>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>{{ form.feature_1.label_tag }}{{ form.feature_1 }}{{ form.feature_1.errors }}</div>
+            <div>{{ form.feature_2.label_tag }}{{ form.feature_2 }}{{ form.feature_2.errors }}</div>
+            <div>{{ form.feature_3.label_tag }}{{ form.feature_3 }}{{ form.feature_3.errors }}</div>
+            <div>{{ form.feature_4.label_tag }}{{ form.feature_4 }}{{ form.feature_4.errors }}</div>
+          </div>
+        </div>
+
+        <div>
+          <label for="id_images" class="block text-sm font-bold text-slate-900 mb-2">Service Image</label>
+          <label for="id_images" class="block rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-7 text-center cursor-pointer hover:bg-slate-100 transition">
+            <div class="mx-auto mb-3 h-11 w-11 rounded-xl bg-slate-200 text-slate-600 grid place-items-center text-lg">🖼</div>
+            <p class="font-semibold text-slate-700">Click or drag to upload</p>
+            <p class="text-xs text-slate-500 mt-1">SVG, PNG, JPG (max. 5MB)</p>
+            <p id="file-hint" class="text-xs text-primary font-semibold mt-2"></p>
+            <span class="hidden">{{ form.images }}</span>
+          </label>
+          {{ form.images.errors }}
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label for="id_image_title_prefix" class="block text-sm font-bold text-slate-900 mb-1.5">Image Title Prefix</label>
+            {{ form.image_title_prefix }}
+            {{ form.image_title_prefix.errors }}
+          </div>
+          <div>
+            <label for="id_order_start" class="block text-sm font-bold text-slate-900 mb-1.5">Initial Order</label>
+            {{ form.order_start }}
+            {{ form.order_start.errors }}
+          </div>
+        </div>
+
+        <div>
+          <label for="id_image_detail" class="block text-sm font-bold text-slate-900 mb-1.5">Image Detail</label>
+          {{ form.image_detail }}
+          {{ form.image_detail.errors }}
+        </div>
+
+        <div class="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200">
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700">{{ form.is_active }} Publish as active service</label>
+          <div class="flex items-center gap-3 ml-auto">
+            <button id="cancel-service-modal" type="button" class="px-5 py-3 rounded-xl text-slate-600 font-bold hover:bg-slate-100">Cancel</button>
+            <button class="px-7 py-3 rounded-xl bg-primary text-white font-extrabold shadow-[0_10px_25px_rgba(0,31,61,0.24)]">Save Service</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+{{ form.errors|json_script:"service-form-errors" }}
+
+<script>
+  const modal = document.getElementById('service-modal');
+  const overlay = document.getElementById('service-modal-overlay');
+  const openBtn = document.getElementById('open-service-modal');
+  const closeBtn = document.getElementById('close-service-modal');
+  const cancelBtn = document.getElementById('cancel-service-modal');
+  const imageInput = document.getElementById('id_images');
+  const fileHint = document.getElementById('file-hint');
+  const errors = JSON.parse(document.getElementById('service-form-errors').textContent || '{}');
+
+  const openModal = () => {
+    modal.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+  };
+
+  const closeModal = () => {
+    modal.classList.add('hidden');
+    overlay.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  };
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  overlay?.addEventListener('click', closeModal);
+
+  if (Object.keys(errors).length > 0) {
+    openModal();
+  }
+
+  imageInput?.addEventListener('change', (event) => {
+    const files = event.target.files || [];
+    if (!fileHint) return;
+    if (files.length === 0) {
+      fileHint.textContent = '';
+      return;
+    }
+    fileHint.textContent = files.length === 1 ? files[0].name : `${files.length} files selected`;
+  });
+</script>
+{% endblock %}

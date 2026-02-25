@@ -1,0 +1,51 @@
+<style>
+  :root {
+    /* Edit only these 3 tokens to rebrand the whole project */
+    --color-primary: 3 43 61;
+    --color-accent: 232 201 133;
+    --color-bgsoft: 236 243 248;
+    --color-surface: 15 58 82;
+    --color-surface-soft: 10 45 64;
+    --color-panel-light: 244 248 252;
+  }
+
+  .brand-soft-card {
+    background: rgb(var(--color-panel-light));
+    border: 1px solid rgb(var(--color-primary) / 0.14);
+    box-shadow: 0 10px 24px rgb(2 18 29 / 0.08);
+  }
+
+  .brand-dark-card {
+    background: linear-gradient(180deg, rgb(var(--color-surface)) 0%, rgb(var(--color-surface-soft)) 100%);
+    border: 1px solid rgb(var(--color-accent) / 0.3);
+    box-shadow: 0 16px 42px rgb(2 18 29 / 0.32);
+    color: rgb(236 244 250);
+  }
+
+  .brand-hover {
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+
+  .brand-hover:hover {
+    transform: translateY(-2px);
+    border-color: rgb(var(--color-accent) / 0.55);
+    box-shadow: 0 0 0 1px rgb(var(--color-accent) / 0.22), 0 14px 34px rgb(2 18 29 / 0.2);
+  }
+</style>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: 'rgb(var(--color-primary) / <alpha-value>)',
+          accent: 'rgb(var(--color-accent) / <alpha-value>)',
+          bgsoft: 'rgb(var(--color-bgsoft) / <alpha-value>)',
+          surface: 'rgb(var(--color-surface) / <alpha-value>)',
+          surfacesoft: 'rgb(var(--color-surface-soft) / <alpha-value>)',
+          panel: 'rgb(var(--color-panel-light) / <alpha-value>)'
+        },
+        fontFamily: { display: ['Manrope', 'sans-serif'] }
+      }
+    }
+  }
+</script>

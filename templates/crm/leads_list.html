@@ -1,0 +1,24 @@
+{% extends 'base_crm.html' %}
+{% block title %}Leads CRM{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-black text-primary">Contact Messages</h1>
+<div class="mt-6 bg-white border border-slate-200 rounded-2xl p-6 overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead><tr class="text-left text-slate-500 border-b border-slate-200"><th class="py-2">Nombre</th><th>Email</th><th>Teléfono</th><th>Empresa</th><th>Estado</th><th>Fecha</th></tr></thead>
+    <tbody>
+      {% for lead in leads %}
+      <tr class="border-b border-slate-100">
+        <td class="py-3 font-semibold">{{ lead.full_name }}</td>
+        <td>{{ lead.email }}</td>
+        <td>{{ lead.phone }}</td>
+        <td>{{ lead.company }}</td>
+        <td>{{ lead.get_status_display }}</td>
+        <td>{{ lead.created_at|date:'d/m/Y H:i' }}</td>
+      </tr>
+      {% empty %}
+      <tr><td class="py-3 text-slate-500" colspan="6">No hay mensajes.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

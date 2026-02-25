@@ -1,0 +1,50 @@
+{% extends 'base_crm.html' %}
+{% block title %}Dashboard CRM{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-black text-primary">Dashboard Overview</h1>
+<div class="mt-4 flex flex-wrap gap-3">
+  <a href="{% url 'blog:manage' %}" class="bg-primary text-white px-4 py-2 rounded-lg font-bold text-sm">+ Crear publicación</a>
+  <a href="{% url 'services:manage' %}" class="bg-accent text-primary px-4 py-2 rounded-lg font-bold text-sm">+ Crear servicio</a>
+  <a href="{% url 'crm:clients' %}" class="bg-slate-100 text-slate-800 px-4 py-2 rounded-lg font-bold text-sm">+ Registrar cliente</a>
+</div>
+<div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+  <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Leads</p><p class="text-3xl font-black text-primary">{{ contacts_count }}</p></div>
+  <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Clientes</p><p class="text-3xl font-black text-primary">{{ clients_count }}</p></div>
+  <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Proformas</p><p class="text-3xl font-black text-primary">{{ proformas_count }}</p></div>
+  <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Posts</p><p class="text-3xl font-black text-primary">{{ blog_count }}</p></div>
+  <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Servicios</p><p class="text-3xl font-black text-primary">{{ services_count }}</p></div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6 mt-8">
+  <section class="bg-white border border-slate-200 rounded-2xl p-6">
+    <h2 class="text-xl font-extrabold text-primary">Últimos contactos</h2>
+    <div class="mt-3 space-y-2">
+      {% for lead in latest_contacts %}
+      <article class="border border-slate-200 rounded-lg p-3">
+        <p class="font-bold">{{ lead.full_name }}</p>
+        <p class="text-sm text-slate-600">{{ lead.email }} · {{ lead.phone }}</p>
+      </article>
+      {% empty %}
+      <p class="text-slate-600">Sin leads.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="bg-white border border-slate-200 rounded-2xl p-6">
+    <h2 class="text-xl font-extrabold text-primary">Últimas proformas</h2>
+    <div class="mt-3 space-y-2">
+      {% for p in latest_proformas %}
+      <article class="border border-slate-200 rounded-lg p-3 flex items-center justify-between gap-2">
+        <div>
+          <p class="font-bold">{{ p.reference }}</p>
+          <p class="text-sm text-slate-600">{{ p.client }}</p>
+        </div>
+        <p class="font-black text-primary">${{ p.total }}</p>
+      </article>
+      {% empty %}
+      <p class="text-slate-600">Sin proformas.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

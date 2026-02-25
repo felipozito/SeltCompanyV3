@@ -1,0 +1,13 @@
+{% extends 'base_crm.html' %}
+{% block title %}Agregar Imágenes Blog{% endblock %}
+{% block content %}
+<section class="max-w-2xl">
+  <a href="{% url 'blog:manage_images' post.id %}" class="text-sm font-bold text-primary">← Volver</a>
+  <h1 class="text-3xl font-black text-primary mt-2">Agregar fotos a {{ post.title }}</h1>
+  <form method="post" enctype="multipart/form-data" class="mt-6 bg-white border border-slate-200 rounded-2xl p-6 space-y-3">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="bg-primary text-white px-6 py-3 rounded-lg font-bold">Subir fotos</button>
+  </form>
+</section>
+{% endblock %}

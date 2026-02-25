@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CRM | Selt Company{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{% static 'brand/tabicon.png' %}">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  {% include 'partials/theme.html' %}
+</head>
+<body class="bg-bgsoft text-slate-900 font-display min-h-screen">
+  <style>
+    @media (min-width: 1024px) {
+      .crm-layout {
+        grid-template-columns: 260px 1fr;
+      }
+      .crm-layout.crm-sidebar-collapsed {
+        grid-template-columns: 0 1fr;
+      }
+      .crm-layout.crm-sidebar-collapsed #crm-sidebar {
+        transform: translateX(-100%);
+      }
+    }
+  </style>
+  <div id="crm-layout" class="crm-layout min-h-screen lg:grid">
+    <aside id="crm-sidebar" class="bg-primary text-white p-6 fixed inset-y-0 left-0 z-40 w-[260px] transform -translate-x-full transition-transform duration-200 lg:static lg:translate-x-0">
+      <div class="flex items-center gap-2">
+        <img src="{% static 'brand/logo2.png' %}" alt="Selt Company" class="h-10 w-auto object-contain">
+        <h1 class="text-xl font-extrabold">CRM</h1>
+      </div>
+      <p class="text-xs text-white/60 mt-1">Panel administrativo</p>
+      <nav class="mt-8 flex flex-col gap-2 text-sm font-semibold">
+        <a href="{% url 'crm:dashboard' %}" class="px-3 py-2 rounded-lg hover:bg-white/10">Dashboard</a>
+        <a href="{% url 'crm:leads' %}" class="px-3 py-2 rounded-lg hover:bg-white/10">Contactos</a>
+        <a href="{% url 'crm:clients' %}" class="px-3 py-2 rounded-lg hover:bg-white/10">Clientes</a>
+        <a href="{% url 'crm:proformas' %}" class="px-3 py-2 rounded-lg hover:bg-white/10">Proformas</a>
+        <a href="{% url 'blog:manage' %}" class="px-3 py-2 rounded-lg hover:bg-white/10">Gestionar Blog</a>
+        <a href="{% url 'services:manage' %}" class="px-3 py-2 rounded-lg hover:bg-white/10">Gestionar Servicios</a>
+      </nav>
+      <div class="mt-8 text-sm">
+        <a class="text-accent" href="{% url 'home' %}">Ver Landing</a>
+      </div>
+      <form action="{% url 'logout' %}" method="post" class="mt-4">
+        {% csrf_token %}
+        <button class="text-sm bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20">Cerrar sesión</button>
+      </form>
+    </aside>
+
+    <div id="crm-sidebar-backdrop" class="fixed inset-0 bg-slate-900/40 z-30 hidden lg:hidden"></div>
+
+    <main class="p-6 lg:p-10 lg:ml-0">
+      <div class="mb-4">
+        <button id="crm-sidebar-toggle" type="button" class="inline-flex items-center gap-2 bg-primary text-white px-5 py-3 rounded-xl text-base font-bold shadow-sm">
+          <span aria-hidden="true">☰</span>
+          <span>Menú CRM</span>
+        </button>
+      </div>
+      {% if messages %}
+        {% for message in messages %}
+        <div class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-2 text-sm">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <script>
+    const layout = document.getElementById('crm-layout');
+    const sidebar = document.getElementById('crm-sidebar');
+    const toggleBtn = document.getElementById('crm-sidebar-toggle');
+    const backdrop = document.getElementById('crm-sidebar-backdrop');
+    if (sidebar && toggleBtn && backdrop) {
+      const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
+      const closeSidebar = () => {
+        sidebar.classList.add('-translate-x-full');
+        layout?.classList.add('crm-sidebar-collapsed');
+        backdrop.classList.add('hidden');
+      };
+      const openSidebar = () => {
+        sidebar.classList.remove('-translate-x-full');
+        layout?.classList.remove('crm-sidebar-collapsed');
+        backdrop.classList.remove('hidden');
+      };
+      toggleBtn.addEventListener('click', () => {
+        if (isDesktop()) {
+          if (layout?.classList.contains('crm-sidebar-collapsed')) {
+            openSidebar();
+          } else {
+            closeSidebar();
+          }
+          return;
+        }
+        if (sidebar.classList.contains('-translate-x-full')) {
+          openSidebar();
+        } else {
+          closeSidebar();
+        }
+      });
+      backdrop.addEventListener('click', () => {
+        if (!isDesktop()) closeSidebar();
+      });
+
+      const syncSidebarByViewport = () => {
+        if (isDesktop()) {
+          openSidebar();
+          backdrop.classList.add('hidden');
+        } else {
+          closeSidebar();
+          layout?.classList.remove('crm-sidebar-collapsed');
+        }
+      };
+      syncSidebarByViewport();
+      window.addEventListener('resize', syncSidebarByViewport);
+    }
+  </script>
+</body>
+</html>

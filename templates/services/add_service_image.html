@@ -1,0 +1,24 @@
+{% extends 'base_crm.html' %}
+{% block title %}Agregar Fotos | {{ service.title }}{% endblock %}
+{% block content %}
+<section class="max-w-2xl">
+  <a href="{% url 'services:manage' %}" class="text-sm font-bold text-primary">← Volver</a>
+  <h1 class="text-3xl font-black text-primary mt-2">Agregar fotos a {{ service.title }}</h1>
+  <p class="text-slate-600 mt-1">Puedes seleccionar varias imágenes a la vez.</p>
+
+  {% if form.errors %}
+  <div class="mt-4 rounded-lg border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+    Revisa los errores antes de subir.
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="mt-6 bg-white border border-slate-200 rounded-2xl p-6 space-y-3">
+    {% csrf_token %}
+    <div>{{ form.title.label_tag }}{{ form.title }}{{ form.title.errors }}</div>
+    <div>{{ form.detail.label_tag }}{{ form.detail }}{{ form.detail.errors }}</div>
+    <div>{{ form.order_start.label_tag }}{{ form.order_start }}{{ form.order_start.errors }}</div>
+    <div>{{ form.images.label_tag }}{{ form.images }}{{ form.images.errors }}</div>
+    <button class="bg-primary text-white px-6 py-3 rounded-lg font-bold">Subir fotos</button>
+  </form>
+</section>
+{% endblock %}
