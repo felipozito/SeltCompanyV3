@@ -1,0 +1,12 @@
+<div class="flex flex-col items-center justify-center px-6 py-10 text-center">
+  <div class="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400" aria-hidden="true">
+    <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h10"/>
+    </svg>
+  </div>
+  <h3 class="text-lg font-extrabold text-primary">{{ title|default:'Sin datos' }}</h3>
+  <p class="mt-1 max-w-sm text-sm text-slate-600">{{ message|default:'Aún no hay registros para mostrar.' }}</p>
+  {% if action_url %}
+  <a href="{{ action_url }}" class="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white">{{ action_label|default:'Crear' }}</a>
+  {% endif %}
+</div>

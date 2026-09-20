@@ -34,7 +34,7 @@
         {% for post in posts %}
         <tr class="border-b border-slate-100">
           <td class="py-4">
-            <p class="font-semibold text-primary">{{ post.title }}</p>
+            <a href="{{ post.get_absolute_url }}" target="_blank" rel="noopener" class="font-semibold text-primary hover:underline">{{ post.title }}</a>
             <p class="text-xs text-slate-500 mt-0.5">{{ post.excerpt|truncatechars:70 }}</p>
           </td>
           <td>
@@ -57,8 +57,9 @@
           </td>
           <td>
             <div class="flex items-center justify-end gap-2">
+              <a class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700" href="{{ post.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Ver publicación {{ post.title }}">View</a>
               <a class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700" href="{% url 'blog:edit' post.id %}">Edit</a>
-              <form method="post" action="{% url 'blog:delete' post.id %}" onsubmit="return confirm('¿Eliminar publicación?')">
+              <form method="post" action="{% url 'blog:delete' post.id %}" data-confirm="¿Eliminar la publicación «{{ post.title }}»? Esta acción no se puede deshacer.">
                 {% csrf_token %}
                 <button class="px-3 py-1.5 rounded-lg bg-red-50 text-red-700">Delete</button>
               </form>
@@ -67,7 +68,9 @@
         </tr>
         {% empty %}
         <tr>
-          <td class="py-6 text-slate-500" colspan="5">No posts yet. Click "Add New Post" to create the first one.</td>
+          <td colspan="5">
+            {% include 'partials/empty_state.html' with title='Sin publicaciones' message='Crea tu primera entrada con el botón "Add New Post".' %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

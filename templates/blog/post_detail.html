@@ -1,13 +1,14 @@
 {% extends 'base_public.html' %}
+{% load image_tags %}
 {% block title %}{{ post.title }}{% endblock %}
 {% block content %}
 <article class="max-w-4xl mx-auto px-4 py-12">
   <a href="{% url 'blog:list' %}" class="text-sm font-bold text-primary">← Volver al blog</a>
   <h1 class="text-4xl font-black text-primary mt-3">{{ post.title }}</h1>
   <p class="text-slate-500 mt-2">{{ post.created_at|date:'d/m/Y H:i' }}</p>
-  {% if post.cover_image %}<img src="{{ post.cover_image.url }}" class="w-full h-80 object-cover rounded-xl my-6" alt="{{ post.title }}">{% endif %}
+  {% if post.cover_image %}<img src="{% thumb post.cover_image 'cover' %}" class="w-full h-80 object-cover rounded-xl my-6" alt="{{ post.title }}">{% endif %}
 
-  <div class="prose prose-slate max-w-none leading-relaxed">{{ post.content|safe }}</div>
+  <div class="prose prose-slate max-w-none leading-relaxed prose-headings:text-primary prose-a:text-primary prose-img:rounded-xl">{{ post.content|safe }}</div>
 
   {% if post.images.all %}
   <section class="mt-10">
@@ -15,7 +16,7 @@
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
       {% for image in post.images.all %}
       <figure class="border border-slate-200 rounded-xl overflow-hidden bg-white">
-        <img src="{{ image.image.url }}" alt="{{ image.caption|default:post.title }}" class="w-full h-44 object-cover">
+        <img src="{% thumb image.image 'gallery' %}" alt="{{ image.caption|default:post.title }}" loading="lazy" class="w-full h-44 object-cover">
         {% if image.caption %}<figcaption class="p-3 text-sm text-slate-600">{{ image.caption }}</figcaption>{% endif %}
       </figure>
       {% endfor %}

@@ -1,4 +1,5 @@
 {% extends 'base_public.html' %}
+{% load image_tags %}
 {% block title %}Blog | Selt Company{% endblock %}
 {% block content %}
 <style>
@@ -11,9 +12,9 @@
   {% if featured_post %}
   <article class="relative overflow-hidden rounded-2xl border border-primary/25 min-h-[330px] lg:min-h-[430px]">
     {% if featured_post.cover_image %}
-    <img src="{{ featured_post.cover_image.url }}" alt="{{ featured_post.title }}" class="absolute inset-0 w-full h-full object-cover">
+    <img src="{% thumb featured_post.cover_image 'cover' %}" alt="{{ featured_post.title }}" class="absolute inset-0 w-full h-full object-cover">
     {% elif featured_post.images.first %}
-    <img src="{{ featured_post.images.first.image.url }}" alt="{{ featured_post.title }}" class="absolute inset-0 w-full h-full object-cover">
+    <img src="{% thumb featured_post.images.first.image 'cover' %}" alt="{{ featured_post.title }}" class="absolute inset-0 w-full h-full object-cover">
     {% else %}
     <div class="absolute inset-0 bg-gradient-to-br from-[#0a2b4b] via-[#0d3a61] to-[#08213b]"></div>
     {% endif %}
@@ -47,15 +48,15 @@
     {% for post in posts %}
     <article class="rounded-2xl brand-soft-card brand-hover overflow-hidden blog-card-shadow">
       {% if post.cover_image %}
-      <img src="{{ post.cover_image.url }}" class="w-full h-56 object-cover" alt="{{ post.title }}">
+      <img src="{% thumb post.cover_image 'cover' %}" loading="lazy" class="w-full h-56 object-cover" alt="{{ post.title }}">
       {% elif post.images.first %}
-      <img src="{{ post.images.first.image.url }}" class="w-full h-56 object-cover" alt="{{ post.title }}">
+      <img src="{% thumb post.images.first.image 'cover' %}" loading="lazy" class="w-full h-56 object-cover" alt="{{ post.title }}">
       {% else %}
       <div class="w-full h-56 bg-gradient-to-br from-[#325d82] to-[#0f2f50]"></div>
       {% endif %}
 
       <div class="p-5">
-        <p class="text-[11px] tracking-[0.16em] uppercase text-accent font-bold">Electrical Safety</p>
+        <p class="text-[11px] tracking-[0.16em] uppercase text-accent-ink font-bold">Electrical Safety</p>
         <h2 class="mt-3 text-[31px] leading-tight font-black text-primary">{{ post.title }}</h2>
         <p class="mt-3 text-slate-600">{{ post.excerpt }}</p>
         <a href="{{ post.get_absolute_url }}" class="inline-flex mt-5 font-bold text-primary">READ STORY →</a>

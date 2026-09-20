@@ -1,5 +1,5 @@
 {% extends 'base_public.html' %}
-{% load static %}
+{% load static image_tags %}
 {% block title %}Selt Company | Inicio{% endblock %}
 {% block content %}
 <style>
@@ -21,29 +21,32 @@
 </style>
 
 <section class="hero-glow text-white pb-14 lg:pb-20">
-  <div class="max-w-7xl mx-auto px-4 pt-12 lg:pt-16 grid lg:grid-cols-2 gap-10 items-center">
-    <div>
-      <span class="inline-flex items-center rounded-full border border-accent/40 bg-accent/10 text-accent px-3 py-1 text-[11px] font-bold tracking-[0.15em]">THE GOLD STANDARD IN ELECTRICAL</span>
-      <h1 class="mt-5 text-4xl sm:text-5xl lg:text-6xl leading-[1.02] font-black max-w-xl">
-        Powering
-        <span class="text-accent italic">Excellence,</span>
-        Delivering Reliability
+  <div class="max-w-6xl mx-auto px-4 pt-12 lg:pt-16 grid lg:grid-cols-2 gap-10 items-center">
+    <div class="brand-reveal">
+      <span class="brand-float inline-flex items-center rounded-full border border-accent/40 bg-accent/10 text-accent px-3 py-1 text-[11px] font-black tracking-[0.15em] uppercase">
+        <span class="mr-2 inline-block h-2 w-2 rounded-full bg-accent animate-pulse"></span>
+        El Estándar de Oro en Instalaciones Eléctricas
+      </span>
+      <h1 class="asset-reveal-none mt-5 text-4xl sm:text-5xl lg:text-6xl leading-[1.02] font-black">
+        Energía y
+        <span class="brand-shimmer-text text-accent italic">Excelencia,</span>
+        con Total Confiabilidad
       </h1>
       <p class="mt-5 text-white/80 max-w-xl text-base">
-        Premium electrical solutions for modern homes and heavy industry. We bring light, safety, and innovation to every project we touch.
+        Soluciones eléctricas y electrónicas premium para hogares modernos e industria pesada. Llevamos luz, seguridad e innovación a cada proyecto que tocamos.
       </p>
       <div class="mt-8 flex flex-wrap gap-3">
-        <a href="#contact" class="bg-accent text-primary font-extrabold px-6 py-3 rounded-xl">Get a Quote Today</a>
-        <a href="{% url 'services:gallery' %}" class="border border-white/35 font-bold px-6 py-3 rounded-xl hover:bg-white/10">Our Projects</a>
+        <a href="#contact" class="brand-sheen brand-glow-cta bg-accent text-primary font-extrabold px-6 py-3 rounded-xl">Cotiza Hoy</a>
+        <a href="{% url 'services:gallery' %}" class="border border-white/35 font-bold px-6 py-3 rounded-xl hover:bg-white/10">Nuestros Proyectos</a>
       </div>
     </div>
 
     <div class="rounded-2xl border border-accent/35 bg-white/5 p-3 shadow-2xl">
       {% if featured_posts and featured_posts.0.cover_image %}
-      <img src="{{ featured_posts.0.cover_image.url }}" alt="Equipo profesional" class="w-full h-[320px] object-cover rounded-xl">
+      <img src="{% thumb featured_posts.0.cover_image 'cover' %}" alt="Equipo profesional" class="w-full h-[320px] object-cover rounded-xl">
       {% else %}
       <div class="w-full h-[320px] rounded-xl bg-gradient-to-br from-[#1b4366] via-[#255982] to-[#1a3659] flex items-center justify-center text-center px-6">
-        <p class="text-white/80 font-semibold text-lg">Professional Electrical Team<br>Ready for Any Challenge</p>
+        <p class="text-white/80 font-semibold text-lg">Equipo Eléctrico Profesional<br>Listo para Cualquier Desafío</p>
       </div>
       {% endif %}
       <div class="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary/80 border border-white/15 px-3 py-2 text-xs">
@@ -71,19 +74,19 @@
     <div class="grid grid-cols-2 gap-3">
       <div class="h-52 rounded-xl bg-gradient-to-br from-[#073b61] to-[#0b5d89] border border-slate-800/10"></div>
       <div class="h-28 rounded-xl bg-accent text-primary p-5 flex flex-col justify-center">
-        <p class="text-3xl font-black leading-none">10k+</p>
-        <p class="text-xs font-bold mt-1 uppercase tracking-wide">Projects Done</p>
+        <p class="text-3xl font-black leading-none"><span data-brand-count>10k+</span></p>
+        <p class="text-xs font-bold mt-1 uppercase tracking-wide">Proyectos Realizados</p>
       </div>
       <div class="h-28 rounded-xl bg-primary text-accent p-5 flex flex-col justify-center">
-        <p class="text-3xl font-black leading-none">25+</p>
-        <p class="text-xs font-bold mt-1 uppercase tracking-wide">Years of Excellence</p>
+        <p class="text-3xl font-black leading-none"><span data-brand-count>25+</span></p>
+        <p class="text-xs font-bold mt-1 uppercase tracking-wide">Años de Experiencia</p>
       </div>
       <div class="h-52 rounded-xl bg-gradient-to-br from-[#6ba2c5] to-[#213d5e] border border-slate-800/10"></div>
     </div>
 
     <div>
-      <p class="text-[11px] font-bold tracking-[0.24em] text-slate-500 uppercase">Our Commitment</p>
-      <h2 class="mt-3 text-4xl leading-tight font-black text-accent">Selt Company</h2>
+      <p class="text-[11px] font-bold tracking-[0.24em] text-slate-500 uppercase">Nuestro Compromiso</p>
+      <h2 class="mt-3 text-4xl leading-tight font-black text-accent brand-rule-animate">Selt Company</h2>
       <p class="mt-4 text-slate-600">
         Somos un equipo calificado y acreditado por la empresa electrica como ingeniero proyetistas para desempenar trabajos de instalacion, reparacion y mantenimiento de servicios electricos y electronicos.
       </p>
@@ -153,7 +156,7 @@
 <section class="bg-[#f0f2f5] py-16 lg:py-20">
   <div class="max-w-7xl mx-auto px-4">
     <p class="text-[11px] font-bold tracking-[0.24em] text-slate-500 uppercase text-center">Our Services</p>
-    <h2 class="mt-3 text-center text-4xl leading-tight font-black text-slate-900">Tailored Solutions for Every Sector</h2>
+    <h2 class="mt-3 text-center text-4xl leading-tight font-black text-slate-900">Soluciones a Medida para Cada Sector</h2>
 
     <div class="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-5">
       {% for service in services|slice:":3" %}
@@ -219,42 +222,25 @@
     </div>
   </div>
 </section>
-
-<footer class="bg-primary text-white">
-  <div class="max-w-7xl mx-auto px-4 py-12 grid md:grid-cols-3 gap-8">
-    <div>
-      <img src="{% static 'brand/logo2.png' %}" alt="Selt Company" class="h-14 w-auto object-contain">
-      <p class="mt-3 text-white/70 text-sm max-w-sm">
-        The gold standard in electrical services. Providing premium residential, commercial, and industrial solutions since 1998.
-      </p>
-    </div>
-    <div>
-      <h4 class="font-extrabold">Quick Links</h4>
-      <div class="mt-3 space-y-2 text-sm text-white/80">
-        <a href="{% url 'home' %}" class="block hover:text-accent">Home</a>
-        <a href="#about" class="block hover:text-accent">About Us</a>
-        <a href="{% url 'services:gallery' %}" class="block hover:text-accent">Services</a>
-        <a href="#contact" class="block hover:text-accent">Contact</a>
-      </div>
-    </div>
-    <div>
-      <h4 class="font-extrabold">Working Hours</h4>
-      <div class="mt-3 space-y-1 text-sm text-white/80">
-        <p>Mon - Fri: 8am - 6pm</p>
-        <p>Saturday: 9am - 4pm</p>
-        <p>Sunday: Closed</p>
-        <p class="text-accent font-bold pt-2">24/7 Emergency Service</p>
-      </div>
-    </div>
-  </div>
-  <div class="border-t border-white/10">
-    <div class="max-w-7xl mx-auto px-4 py-4 text-xs text-white/60 flex flex-wrap items-center justify-between gap-2">
-      <p>©2024 Volt & Gold Electrical Services. All rights reserved.</p>
-      <div class="flex items-center gap-4">
-        <a href="#" class="hover:text-accent">Privacy Policy</a>
-        <a href="#" class="hover:text-accent">Terms of Service</a>
-      </div>
-    </div>
-  </div>
-</footer>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const nums = document.querySelectorAll('[data-brand-count]');
+    nums.forEach(function (el) {
+      const raw = el.textContent.replace(/[^0-9k.]/g, '');
+      const mult = raw.includes('k') ? 1000 : 1;
+      const target = Math.round(parseFloat(raw) * mult);
+      if (!target) return;
+      const dur = 1400;
+      const t0 = performance.now();
+      function fmt(n) { return n >= 1000 ? (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1).replace('.', ',') + 'k' : String(n); }
+      (function tick(now) {
+        const pct = Math.min(1, (now - t0) / dur);
+        const eased = 1 - Math.pow(1 - pct, 3);
+        el.textContent = fmt(Math.round(target * eased));
+        if (pct < 1) requestAnimationFrame(tick);
+      })(t0);
+    });
+  });
+</script>
 {% endblock %}

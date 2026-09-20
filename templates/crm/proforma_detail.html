@@ -1,0 +1,142 @@
+{% extends 'base_crm.html' %}
+{% load static humanize %}
+{% block title %}{{ proforma.reference }} | Proforma{% endblock %}
+{% block content %}
+<style>
+  .proforma-toolbar { max-width: 21cm; }
+  .proforma-sheet {
+    width: 21cm;
+    min-height: 27cm;
+    margin: 0 auto;
+    background: #fff;
+    color: #111;
+    padding: 1.4cm 1.6cm;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11pt;
+    line-height: 1.45;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+  }
+  .proforma-sheet h1 { font-size: 16pt; }
+  .proforma-sheet h2 { font-size: 12pt; }
+  .proforma-sheet table { border-collapse: collapse; width: 100%; }
+  .proforma-sheet .client-table td { border: 1px solid #333; padding: 3px 7px; }
+  .proforma-sheet .client-table td.label { width: 34%; font-weight: 700; background: #f2f2f2; }
+  .proforma-sheet .items-table th,
+  .proforma-sheet .items-table td { border: 1px solid #333; padding: 4px 7px; vertical-align: top; }
+  .proforma-sheet .items-table th { background: #e9e9e9; text-align: center; font-weight: 700; }
+  .proforma-sheet .items-table td.money { text-align: right; white-space: nowrap; }
+  .proforma-sheet ul { margin: .2cm 0 .2cm 1em; padding: 0; }
+  .proforma-sheet ul li { margin-bottom: 2px; }
+  .proforma-sheet .section-number { font-weight: 700; }
+  @page { size: A4; margin: 12mm; }
+  @media print {
+    #crm-sidebar, #crm-sidebar-toggle, #crm-sidebar-backdrop, #crm-confirm,
+    a.sr-only, .no-print { display: none !important; }
+    .crm-layout { display: block !important; }
+    #crm-content { padding: 0 !important; }
+    body { background: #fff !important; }
+    .proforma-sheet { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+  }
+</style>
+
+<div class="proforma-toolbar no-print mx-auto mb-6 flex flex-wrap items-center justify-between gap-3">
+  <a href="{% url 'crm:proformas' %}" class="rounded-lg px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100">&larr; Volver</a>
+  <div class="flex flex-wrap gap-3">
+    <a href="{% url 'crm:proforma_edit' proforma.id %}" class="rounded-lg border border-primary/20 px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/5">Editar</a>
+    <a href="{% url 'crm:proforma_print' proforma.id %}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-primary hover:bg-accent/90">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6M6 18H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-1M7 14h10v7H7z"/></svg>
+      Imprimir / Guardar como PDF
+    </a>
+  </div>
+</div>
+
+<article class="proforma-sheet">
+  <header style="display:flex; align-items:center; justify-content:space-between; gap:1cm; border-bottom:2px solid #032B3D; padding-bottom:.35cm;">
+    <img src="{% static 'brand/logo2.png' %}" alt="Selt Company" style="height:2.1cm; width:auto;">
+    <div style="text-align:right; font-size:9.5pt; line-height:1.35;">
+      <div><strong>Dirección:</strong> {{ company.address }}</div>
+      <div><strong>Telf:</strong> {{ company.phones }}</div>
+      <div><strong>Correo:</strong> {{ company.email }}</div>
+    </div>
+  </header>
+
+  <h1 style="text-align:center; margin:.45cm 0 .35cm; font-weight:800; letter-spacing:.5px; text-transform:uppercase;">{{ proforma.title }}</h1>
+
+  <table class="client-table" style="margin-bottom:.5cm;">
+    <tr><td class="label">Empresa (Cliente)</td><td>{{ proforma.client_name|default:proforma.client }}</td></tr>
+    <tr><td class="label">R.U.C. / C.I.</td><td>{{ proforma.client_ruc }}</td></tr>
+    <tr><td class="label">Dirección</td><td>{{ proforma.client_address }}</td></tr>
+    <tr><td class="label">Teléfono</td><td>{{ proforma.client_phone }}</td></tr>
+    <tr><td class="label">Correo</td><td>{{ proforma.client_email }}</td></tr>
+  </table>
+
+  {% if proforma.service_title %}
+  <h2 style="margin:.4cm 0 .2cm; font-weight:800; text-transform:uppercase;">{{ proforma.service_title }}</h2>
+  {% endif %}
+
+  {% if proforma.object_text %}
+  <h2 style="margin:.35cm 0 .15cm;"><span class="section-number">1. Objeto del servicio</span></h2>
+  <p style="margin:0 0 .3cm; text-align:justify;">{{ proforma.object_text|linebreaksbr }}</p>
+  {% endif %}
+
+  {% if proforma.scope_lines %}
+  <h2 style="margin:.35cm 0 .15cm;"><span class="section-number">2. Alcance</span></h2>
+  <ul>
+    {% for line in proforma.scope_lines %}<li>{{ line }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  <h2 style="margin:.45cm 0 .2cm;"><span class="section-number">3. Valor del servicio</span></h2>
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th style="width:8%;">ÍTEM</th>
+        <th>DESCRIPCIÓN</th>
+        <th style="width:18%;">V. UNITARIO</th>
+        <th style="width:18%;">V. TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in proforma.items.all %}
+      <tr>
+        <td style="text-align:center;">{{ forloop.counter }}</td>
+        <td>{{ item.description|linebreaksbr }}</td>
+        <td class="money">$ {{ item.unit_price|floatformat:2|intcomma }}</td>
+        <td class="money">$ {{ item.total|floatformat:2|intcomma }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" style="text-align:center;">Sin ítems registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" class="money" style="font-weight:700;">SUBTOTAL</td>
+        <td class="money">$ {{ proforma.subtotal|floatformat:2|intcomma }}</td>
+      </tr>
+      <tr>
+        <td colspan="3" class="money" style="font-weight:700;">IVA {{ proforma.tax_rate|floatformat:0 }}%</td>
+        <td class="money">$ {{ proforma.tax_amount|floatformat:2|intcomma }}</td>
+      </tr>
+      <tr>
+        <td colspan="3" class="money" style="font-weight:700;">TOTAL</td>
+        <td class="money" style="font-weight:700;">$ {{ proforma.total|floatformat:2|intcomma }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <p style="margin:.7cm 0 .5cm; text-align:right;">{{ proforma.place }}, {{ proforma.issue_date|date:"j \d\e F \d\e Y" }}</p>
+
+  <p style="margin:0 0 .6cm;">Atentamente.-</p>
+
+  {% if proforma.terms_lines %}
+  <h2 style="margin:.3cm 0 .15cm; font-weight:800; text-transform:uppercase;">Términos y Condiciones</h2>
+  <ul>
+    {% for line in proforma.terms_lines %}<li>{{ line }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</article>
+
+{% if auto_print %}
+<script>window.addEventListener('load', function () { window.print(); });</script>
+{% endif %}
+{% endblock %}

@@ -7,6 +7,8 @@
     --color-surface: 15 58 82;
     --color-surface-soft: 10 45 64;
     --color-panel-light: 244 248 252;
+    /* Darker gold for accessible text on light backgrounds */
+    --color-accent-ink: 138 100 18;
   }
 
   .brand-soft-card {
@@ -31,6 +33,197 @@
     border-color: rgb(var(--color-accent) / 0.55);
     box-shadow: 0 0 0 1px rgb(var(--color-accent) / 0.22), 0 14px 34px rgb(2 18 29 / 0.2);
   }
+
+  /* Accessible text-on-light accent (use .text-accent-ink instead of .text-accent on white) */
+  .text-accent-ink { color: rgb(var(--color-accent-ink)); }
+
+  /* ---------- Elegant motion (brand: deep navy + gold, "electric") ---------- */
+
+  /* Soft rotating gold halo behind hero imagery */
+  .brand-halo {
+    background:
+      radial-gradient(closest-side, rgb(var(--color-accent) / 0.22), transparent 72%);
+    animation: brand-halo-drift 9s ease-in-out infinite;
+  }
+  @keyframes brand-halo-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(14px, -10px) scale(1.06); }
+  }
+
+  /* Slow aurora tint that breathes behind dark sections */
+  .brand-aurora {
+    background:
+      radial-gradient(48% 42% at 22% 18%, rgb(var(--color-accent) / 0.12), transparent 70%),
+      radial-gradient(40% 42% at 82% 26%, rgb(31 90 122 / 0.55), transparent 72%);
+    animation: brand-aurora-move 16s ease-in-out infinite alternate;
+  }
+  @keyframes brand-aurora-move {
+    from { background-position: 0% 0%, 100% 100%; }
+    to   { background-position: 100% 100%, 0% 0%; }
+  }
+
+  /* Gold shimmer over emphasis words */
+  .brand-shimmer-text {
+    background: linear-gradient(100deg,
+      rgb(var(--color-accent-ink)) 20%,
+      rgb(var(--color-accent)) 42%,
+      rgb(248 235 190) 52%,
+      rgb(var(--color-accent-ink)) 70%);
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: brand-shimmer 6s linear infinite;
+  }
+  @keyframes brand-shimmer {
+    0%   { background-position: 0% center; }
+    100% { background-position: -220% center; }
+  }
+
+  /* Growing underline link (draws left -> right) */
+  .brand-link-underline { position: relative; }
+  .brand-link-underline::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 2px;
+    border-radius: 999px;
+    background: rgb(var(--color-accent));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .3s ease;
+  }
+  .brand-link-underline:hover::after,
+  .brand-link-underline:focus-visible::after { transform: scaleX(1); }
+
+  /* Gold sheen sweeping across accent buttons on hover */
+  .brand-sheen { position: relative; overflow: hidden; }
+  .brand-sheen::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -80%;
+    width: 45%;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.55), transparent);
+    transform: skewX(-18deg);
+    pointer-events: none;
+  }
+  .brand-sheen:hover::after { animation: brand-sheen 0.85s ease; }
+  @keyframes brand-sheen {
+    from { left: -80%; }
+    to   { left: 135%; }
+  }
+
+  /* CTA glow that pulses subtly on hover */
+  .brand-cta {
+    box-shadow: 0 8px 26px rgb(var(--color-accent) / 0.28);
+    transition: box-shadow .3s ease, transform .3s ease;
+  }
+  .brand-cta:hover {
+    box-shadow: 0 10px 34px rgb(var(--color-accent) / 0.45);
+    transform: translateY(-2px);
+  }
+
+  /* ---------- Hero entrance (staggered rise, elegant) ---------- */
+  .brand-hero-el {
+    opacity: 0;
+    transform: translateY(26px);
+    animation: brand-hero-rise .9s cubic-bezier(.22, 1, .36, 1) forwards;
+    animation-delay: var(--brand-hero-delay, 0ms);
+  }
+  @keyframes brand-hero-rise {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Soft breathing gold glow on primary CTAs */
+  .brand-glow-cta { animation: brand-glow-breathe 3.2s ease-in-out infinite; }
+  @keyframes brand-glow-breathe {
+    0%, 100% { box-shadow: 0 12px 34px rgb(var(--color-accent) / 0.32); }
+    50%      { box-shadow: 0 12px 46px rgb(var(--color-accent) / 0.5); }
+  }
+
+  /* Gold underline that draws in when the heading scrolls into view */
+  .brand-rule {
+    position: relative;
+    padding-bottom: .35em;
+  }
+  .brand-rule::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: 0;
+    height: 3px;
+    width: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgb(var(--color-accent)) 0%, rgb(var(--color-accent) / 0.15) 100%);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform .7s cubic-bezier(.22, 1, .36, 1) .15s;
+  }
+  .brand-rule-animate::after { transform: scaleX(1); }
+
+  /* Scroll-reveal: single system — .brand-reveal + .brand-visible (see below) */
+
+  /* Soft floating badges/icons (e.g. hero quote chip) */
+  .brand-float { animation: brand-float 5s ease-in-out infinite; }
+  @keyframes brand-float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+
+  /* Visible keyboard focus everywhere */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 3px solid rgb(var(--color-accent));
+    outline-offset: 2px;
+    border-radius: 0.35rem;
+  }
+
+  /* Current flowing along a gold line: draw on view */
+  .brand-current {
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-current::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(100deg, transparent 20%, rgb(var(--color-accent) / 0.45) 50%, transparent 80%) 0 0 / 300% 100%;
+    animation: brand-current-flow 2.6s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes brand-current-flow {
+    from { background-position: 190% 0; }
+    to   { background-position: -120% 0; }
+  }
+
+  /* Slow drifting logo marquee (trusted-by strip) */
+  .brand-marquee-track {
+    display: flex;
+    width: max-content;
+    animation: brand-marquee 32s linear infinite;
+  }
+  @keyframes brand-marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* Elegant gold gradient text */
+  .brand-gold-text {
+    background: linear-gradient(100deg, rgb(var(--color-accent-ink)) 0%, rgb(var(--color-accent)) 55%, rgb(var(--color-accent-ink)) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+    /* ---------- Scroll reveal (DISABLED by request) ---------- */
+  /* Nothing is ever hidden: .brand-reveal is always fully visible. */
+  .brand-reveal,
+  .brand-reveal.brand-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    will-change: auto;
+  }
 </style>
 <script>
   tailwind.config = {
@@ -39,6 +232,7 @@
         colors: {
           primary: 'rgb(var(--color-primary) / <alpha-value>)',
           accent: 'rgb(var(--color-accent) / <alpha-value>)',
+          accentink: 'rgb(var(--color-accent-ink) / <alpha-value>)',
           bgsoft: 'rgb(var(--color-bgsoft) / <alpha-value>)',
           surface: 'rgb(var(--color-surface) / <alpha-value>)',
           surfacesoft: 'rgb(var(--color-surface-soft) / <alpha-value>)',
@@ -48,4 +242,18 @@
       }
     }
   }
+</script>
+<script>
+  (function () {
+    /* Scroll reveal: add .html.js so hidden-start only applies with JS available */
+    document.documentElement.classList.add('js');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const targets = document.querySelectorAll('.brand-reveal');
+    if (reduce || !('IntersectionObserver' in window) || !targets.length) {
+      targets.forEach((el) => el.classList.add('brand-visible'));
+      return;
+    }
+    /* Reveal disabled on purpose: content is always visible (see CSS).
+       We never hide anything, so no observer is needed. */
+  })();
 </script>

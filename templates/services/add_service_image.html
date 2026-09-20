@@ -12,12 +12,9 @@
   </div>
   {% endif %}
 
-  <form method="post" enctype="multipart/form-data" class="mt-6 bg-white border border-slate-200 rounded-2xl p-6 space-y-3">
+  <form method="post" enctype="multipart/form-data" class="mt-6 bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
     {% csrf_token %}
-    <div>{{ form.title.label_tag }}{{ form.title }}{{ form.title.errors }}</div>
-    <div>{{ form.detail.label_tag }}{{ form.detail }}{{ form.detail.errors }}</div>
-    <div>{{ form.order_start.label_tag }}{{ form.order_start }}{{ form.order_start.errors }}</div>
-    <div>{{ form.images.label_tag }}{{ form.images }}{{ form.images.errors }}</div>
+    {% include 'partials/form_fields.html' %}
     <button class="bg-primary text-white px-6 py-3 rounded-lg font-bold">Subir fotos</button>
   </form>
 </section>

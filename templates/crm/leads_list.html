@@ -16,7 +16,7 @@
         <td>{{ lead.created_at|date:'d/m/Y H:i' }}</td>
       </tr>
       {% empty %}
-      <tr><td class="py-3 text-slate-500" colspan="6">No hay mensajes.</td></tr>
+      <tr><td colspan="6">{% include 'partials/empty_state.html' with title='Sin mensajes' message='Los contactos enviados desde la landing aparecerán aquí.' %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -1,34 +1,69 @@
 {% extends 'base_crm.html' %}
 {% block title %}Proformas CRM{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-black text-primary">Proformas</h1>
-<div class="grid lg:grid-cols-[1fr_380px] gap-6 mt-6">
-  <section class="bg-white border border-slate-200 rounded-2xl p-6 overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-slate-500 border-b border-slate-200"><th class="py-2">Ref.</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead>
-      <tbody>
-        {% for p in proformas %}
-        <tr class="border-b border-slate-100">
-          <td class="py-3 font-semibold">{{ p.reference }}</td>
-          <td>{{ p.client }}</td>
-          <td>${{ p.total }}</td>
-          <td>{{ p.get_status_display }}</td>
-          <td>{{ p.created_at|date:'d/m/Y' }}</td>
-        </tr>
-        {% empty %}
-        <tr><td class="py-3 text-slate-500" colspan="5">Sin proformas cargadas.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
-
-  <section class="bg-white border border-slate-200 rounded-2xl p-6">
-    <h2 class="text-xl font-extrabold text-primary">Nueva proforma</h2>
-    <form method="post" class="mt-4 space-y-3">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button class="w-full bg-primary text-white py-3 rounded-lg font-bold">Guardar proforma</button>
-    </form>
-  </section>
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1 class="text-3xl font-black text-primary">Proformas</h1>
+    <p class="mt-1 text-sm text-slate-500">Crea, edita e imprime propuestas económicas.</p>
+  </div>
+  <a href="{% url 'crm:proforma_create' %}" class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-primary/90">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+    Nueva proforma
+  </a>
 </div>
+
+<section class="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-6">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-slate-200 text-left text-slate-500">
+        <th class="py-2">Ref.</th>
+        <th>Cliente</th>
+        <th>Fecha</th>
+        <th class="text-right">Total</th>
+        <th>Estado</th>
+        <th class="text-right">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in proformas %}
+      <tr class="border-b border-slate-100">
+        <td class="py-3 font-semibold text-primary">
+          <a href="{% url 'crm:proforma_detail' p.id %}" class="hover:underline">{{ p.reference }}</a>
+        </td>
+        <td>{{ p.client_name|default:p.client }}</td>
+        <td>{{ p.issue_date|date:'d/m/Y' }}</td>
+        <td class="text-right font-semibold">$ {{ p.total|floatformat:2 }}</td>
+        <td>
+          <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold
+            {% if p.status == 'approved' %}bg-green-100 text-green-700
+            {% elif p.status == 'sent' %}bg-blue-100 text-blue-700
+            {% elif p.status == 'rejected' %}bg-red-100 text-red-700
+            {% else %}bg-slate-100 text-slate-600{% endif %}">{{ p.get_status_display }}</span>
+        </td>
+        <td class="py-3">
+          <div class="flex items-center justify-end gap-2">
+            <a href="{% url 'crm:proforma_detail' p.id %}" title="Ver" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-primary">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </a>
+            <a href="{% url 'crm:proforma_edit' p.id %}" title="Editar" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-primary">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg>
+            </a>
+            <a href="{% url 'crm:proforma_print' p.id %}" title="Imprimir" target="_blank" rel="noopener" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-primary">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6M6 18H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-1M7 14h10v7H7z"/></svg>
+            </a>
+            <form method="post" action="{% url 'crm:proforma_delete' p.id %}" data-confirm="¿Eliminar la proforma {{ p.reference }}? Esta acción no se puede deshacer.">
+              {% csrf_token %}
+              <button type="submit" title="Eliminar" class="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="py-6">{% include 'partials/empty_state.html' with title='Sin proformas' message='Crea la primera proforma para empezar.' %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
 {% endblock %}

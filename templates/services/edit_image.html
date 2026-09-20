@@ -1,13 +1,14 @@
 {% extends 'base_crm.html' %}
+{% load image_tags %}
 {% block title %}Editar Imagen{% endblock %}
 {% block content %}
 <section class="max-w-2xl">
   <a href="{% url 'services:manage_images' service.id %}" class="text-sm font-bold text-primary">← Volver</a>
   <h1 class="text-3xl font-black text-primary mt-2">Editar imagen</h1>
-  <img src="{{ image.image.url }}" class="w-full max-w-md h-56 object-cover rounded-xl mt-4" alt="{{ image.title }}">
-  <form method="post" class="mt-6 bg-white border border-slate-200 rounded-2xl p-6 space-y-3">
+  <img src="{% thumb image.image 'gallery' %}" class="w-full max-w-md h-56 object-cover rounded-xl mt-4" alt="{{ image.title }}">
+  <form method="post" class="mt-6 bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
     {% csrf_token %}
-    {{ form.as_p }}
+    {% include 'partials/form_fields.html' %}
     <button class="bg-primary text-white px-6 py-3 rounded-lg font-bold">Guardar cambios</button>
   </form>
 </section>

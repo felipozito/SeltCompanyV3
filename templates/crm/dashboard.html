@@ -34,13 +34,13 @@
     <h2 class="text-xl font-extrabold text-primary">Últimas proformas</h2>
     <div class="mt-3 space-y-2">
       {% for p in latest_proformas %}
-      <article class="border border-slate-200 rounded-lg p-3 flex items-center justify-between gap-2">
+      <a href="{% url 'crm:proforma_detail' p.id %}" class="border border-slate-200 rounded-lg p-3 flex items-center justify-between gap-2 hover:border-primary/40">
         <div>
           <p class="font-bold">{{ p.reference }}</p>
-          <p class="text-sm text-slate-600">{{ p.client }}</p>
+          <p class="text-sm text-slate-600">{{ p.client_name|default:p.client }}</p>
         </div>
-        <p class="font-black text-primary">${{ p.total }}</p>
-      </article>
+        <p class="font-black text-primary">${{ p.total|floatformat:2 }}</p>
+      </a>
       {% empty %}
       <p class="text-slate-600">Sin proformas.</p>
       {% endfor %}

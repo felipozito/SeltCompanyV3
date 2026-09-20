@@ -1,5 +1,5 @@
 {% extends 'base_public.html' %}
-{% load static %}
+{% load static image_tags %}
 {% block title %}Servicios | Selt Company{% endblock %}
 {% block content %}
 <style>
@@ -12,7 +12,7 @@
 </style>
 
 <section class="max-w-7xl mx-auto px-4 pt-12 pb-6 text-center">
-  <p class="text-[11px] font-bold tracking-[0.22em] text-accent uppercase">Our Expertise</p>
+  <p class="text-[11px] font-bold tracking-[0.22em] text-accent-ink uppercase">Our Expertise</p>
   <h1 class="mt-3 text-4xl sm:text-5xl font-black text-primary leading-tight">Comprehensive Electrical Solutions</h1>
   <p class="mt-4 max-w-3xl mx-auto text-slate-600">
     Delivering high-end electrical services with a focus on safety, efficiency, and modern technological integration across residential, commercial, and industrial sectors.
@@ -26,7 +26,9 @@
       <div class="{% if forloop.counter|divisibleby:2 %}lg:order-2{% endif %}">
         <div class="h-full rounded-xl {% if forloop.counter|divisibleby:2 %}bg-white/5 border border-white/15{% else %}bg-slate-50 border border-slate-200{% endif %} p-5 sm:p-6 flex flex-col">
           <div class="h-8 w-8 rounded-md {% if forloop.counter|divisibleby:2 %}bg-accent text-primary{% else %}bg-accent/20 text-accent{% endif %} grid place-items-center font-black">⚡</div>
-          <h2 class="mt-4 text-2xl sm:text-3xl font-black {% if forloop.counter|divisibleby:2 %}text-white{% else %}text-primary{% endif %}">{{ service.title }}</h2>
+          <h2 class="mt-4 text-2xl sm:text-3xl font-black {% if forloop.counter|divisibleby:2 %}text-white{% else %}text-primary{% endif %}">
+            <a href="{{ service.get_absolute_url }}" class="rounded hover:underline focus-visible:underline">{{ service.title }}</a>
+          </h2>
           <p class="mt-3 {% if forloop.counter|divisibleby:2 %}text-white/80{% else %}text-slate-600{% endif %}">{{ service.description }}</p>
 
           <div class="mt-5 grid sm:grid-cols-2 gap-3 text-sm">
@@ -45,7 +47,8 @@
           </div>
 
           <div class="mt-6 flex items-center gap-3 flex-wrap">
-            <a href="#contact-services" class="px-5 py-2.5 rounded-lg font-bold {% if forloop.counter|divisibleby:2 %}bg-accent text-primary{% else %}bg-primary text-white{% endif %}">Request This Service</a>
+            <a href="{{ service.get_absolute_url }}" class="px-5 py-2.5 rounded-lg font-bold {% if forloop.counter|divisibleby:2 %}bg-accent text-primary{% else %}bg-primary text-white{% endif %}">Ver detalle</a>
+            <a href="#contact-services" class="px-5 py-2.5 rounded-lg font-bold border {% if forloop.counter|divisibleby:2 %}border-white/40 text-white hover:bg-white/10{% else %}border-primary/30 text-primary hover:bg-slate-100{% endif %}">Solicitar</a>
             {% if service.price %}
             <span class="font-extrabold {% if forloop.counter|divisibleby:2 %}text-accent{% else %}text-primary{% endif %}">From ${{ service.price }}</span>
             {% endif %}
@@ -64,7 +67,7 @@
                   data-title="{{ image.title|escape }}"
                   data-detail="{{ image.detail|default:''|escape }}"
                   data-service="{{ service.title|escape }}">
-            <img src="{{ image.image.url }}" alt="{{ image.title }}" class="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-300">
+            <img src="{% thumb image.image 'gallery' %}" alt="{{ image.title }}" loading="lazy" class="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-300">
           </button>
           {% endfor %}
         </div>
@@ -100,59 +103,16 @@
   </div>
 </section>
 
-<footer class="bg-primary text-white">
-  <div class="max-w-7xl mx-auto px-4 py-12 grid md:grid-cols-4 gap-8">
-    <div>
-      <img src="{% static 'brand/logo2.png' %}" alt="Selt Company" class="h-12 w-auto object-contain">
-      <p class="mt-3 text-sm text-white/70">Excellence in electrical engineering and installation since 1998.</p>
-    </div>
-    <div>
-      <h4 class="text-accent text-xs font-bold tracking-[0.16em] uppercase">Services</h4>
-      <div class="mt-3 space-y-2 text-sm text-white/80">
-        {% for service in services|slice:":5" %}
-        <p>{{ service.title }}</p>
-        {% empty %}
-        <p>Residential Wiring</p>
-        <p>Commercial Fit-outs</p>
-        {% endfor %}
-      </div>
-    </div>
-    <div>
-      <h4 class="text-accent text-xs font-bold tracking-[0.16em] uppercase">Company</h4>
-      <div class="mt-3 space-y-2 text-sm text-white/80">
-        <a href="{% url 'home' %}" class="block hover:text-accent">Home</a>
-        <a href="{% url 'services:gallery' %}" class="block hover:text-accent">Services</a>
-        <a href="{% url 'blog:list' %}" class="block hover:text-accent">Blog</a>
-        <a href="{% url 'crm:dashboard' %}" class="block hover:text-accent">CRM</a>
-      </div>
-    </div>
-    <div>
-      <h4 class="text-accent text-xs font-bold tracking-[0.16em] uppercase">Our Location</h4>
-      <div class="mt-3 rounded-xl bg-white/10 border border-white/15 h-28"></div>
-      <p class="mt-2 text-xs text-white/70">123 Power Grid Lane, Energy District</p>
-    </div>
-  </div>
-  <div class="border-t border-white/10">
-    <div class="max-w-7xl mx-auto px-4 py-4 text-[11px] text-white/60 flex flex-wrap items-center justify-between gap-2">
-      <p>© 2026 Selt Company. All rights reserved.</p>
-      <div class="flex items-center gap-4">
-        <a href="#" class="hover:text-accent">Privacy Policy</a>
-        <a href="#" class="hover:text-accent">Terms of Service</a>
-      </div>
-    </div>
-  </div>
-</footer>
-
-<div id="service-gallery-modal" class="fixed inset-0 z-[100] hidden bg-black/80 p-4">
+<div id="service-gallery-modal" class="fixed inset-0 z-[100] hidden bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Galería de imágenes del servicio">
   <div class="max-w-5xl mx-auto h-full flex flex-col justify-center">
     <div class="flex justify-end mb-2">
-      <button id="gallery-close" type="button" class="bg-white text-slate-900 px-3 py-1 rounded-lg font-bold">Cerrar</button>
+      <button id="gallery-close" type="button" aria-label="Cerrar galería" class="bg-white text-slate-900 px-4 py-2 rounded-lg font-bold">Cerrar</button>
     </div>
     <div class="bg-white rounded-2xl overflow-hidden">
       <div class="relative bg-slate-950">
         <img id="gallery-image" src="" alt="Imagen de servicio" class="w-full h-[55vh] object-contain">
-        <button id="gallery-prev" type="button" class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 px-3 py-2 rounded-lg font-bold">←</button>
-        <button id="gallery-next" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 px-3 py-2 rounded-lg font-bold">→</button>
+        <button id="gallery-prev" type="button" aria-label="Imagen anterior" class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 px-4 py-3 rounded-lg font-bold">←</button>
+        <button id="gallery-next" type="button" aria-label="Imagen siguiente" class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 px-4 py-3 rounded-lg font-bold">→</button>
       </div>
       <div class="p-4 border-t border-slate-200">
         <p id="gallery-service" class="text-xs font-bold tracking-wider text-slate-500 uppercase"></p>

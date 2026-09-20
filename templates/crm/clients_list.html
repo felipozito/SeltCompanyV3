@@ -5,18 +5,19 @@
 <div class="grid lg:grid-cols-[1fr_360px] gap-6 mt-6">
   <section class="bg-white border border-slate-200 rounded-2xl p-6 overflow-x-auto">
     <table class="w-full text-sm">
-      <thead><tr class="text-left text-slate-500 border-b border-slate-200"><th class="py-2">Nombre</th><th>Empresa</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr></thead>
+      <thead><tr class="text-left text-slate-500 border-b border-slate-200"><th class="py-2">Nombre</th><th>R.U.C. / C.I.</th><th>Empresa</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr></thead>
       <tbody>
         {% for client in clients %}
         <tr class="border-b border-slate-100">
           <td class="py-3 font-semibold">{{ client.name }}</td>
+          <td>{{ client.ruc|default:'—' }}</td>
           <td>{{ client.company }}</td>
           <td>{{ client.email }}</td>
           <td>{{ client.phone }}</td>
           <td>
             <div class="flex items-center gap-2">
               <a class="px-2 py-1 rounded bg-slate-100" href="{% url 'crm:client_edit' client.id %}">Editar</a>
-              <form method="post" action="{% url 'crm:client_delete' client.id %}" onsubmit="return confirm('¿Eliminar cliente?')">
+              <form method="post" action="{% url 'crm:client_delete' client.id %}" data-confirm="¿Eliminar el cliente «{{ client.name }}»? Esta acción no se puede deshacer.">
                 {% csrf_token %}
                 <button class="px-2 py-1 rounded bg-red-50 text-red-700">Eliminar</button>
               </form>
@@ -24,16 +25,16 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td class="py-3 text-slate-500" colspan="5">Sin clientes registrados.</td></tr>
+        <tr><td colspan="6">{% include 'partials/empty_state.html' with title='Sin clientes' message='Registra tu primer cliente con el formulario de la derecha.' %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </section>
   <section class="bg-white border border-slate-200 rounded-2xl p-6">
     <h2 class="text-xl font-extrabold text-primary">Nuevo cliente</h2>
-    <form method="post" class="mt-4 space-y-3">
+    <form method="post" class="mt-4 space-y-4">
       {% csrf_token %}
-      {{ form.as_p }}
+      {% include 'partials/form_fields.html' %}
       <button class="w-full bg-primary text-white py-3 rounded-lg font-bold">Guardar cliente</button>
     </form>
   </section>
