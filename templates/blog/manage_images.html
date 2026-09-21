@@ -6,7 +6,7 @@
   <a href="{% url 'blog:manage' %}" class="text-sm font-bold text-primary">← Volver al blog</a>
   <div class="flex items-center justify-between mt-2">
     <h1 class="text-3xl font-black text-primary">Imágenes: {{ post.title }}</h1>
-    <a class="bg-primary text-white px-4 py-2 rounded-lg font-bold" href="{% url 'blog:add_images' post.id %}">Agregar fotos</a>
+    <a class="btn-cta px-4 py-2" href="{% url 'blog:add_images' post.id %}">Agregar fotos</a>
   </div>
   <p class="text-slate-600 mt-2">Arrastra para ordenar. Se guarda automáticamente.</p>
 

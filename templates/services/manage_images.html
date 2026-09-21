@@ -6,7 +6,7 @@
   <a href="{% url 'services:manage' %}" class="text-sm font-bold text-primary">← Volver a servicios</a>
   <div class="flex items-center justify-between mt-2">
     <h1 class="text-3xl font-black text-primary">Imágenes: {{ service.title }}</h1>
-    <a class="bg-primary text-white px-4 py-2 rounded-lg font-bold" href="{% url 'services:add_image' service.id %}">Agregar fotos</a>
+    <a class="btn-cta px-4 py-2" href="{% url 'services:add_image' service.id %}">Agregar fotos</a>
   </div>
   <p class="text-slate-600 mt-2">Arrastra para ordenar. El orden se guarda automáticamente.</p>
 

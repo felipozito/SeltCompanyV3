@@ -69,6 +69,14 @@
           <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3h8l4 4v14H4V3zM8 12h8M8 16h5"/></svg>
           <span class="crm-label">Proformas</span>
         </a>
+        <a href="{% url 'crm:catalogo' %}" title="Catálogo de Cargas" class="crm-nav-link px-3 py-2 rounded-lg flex items-center gap-2 {% if 'catalogo' in vn or 'carga_' in vn %}bg-white/15 text-accent{% else %}hover:bg-white/10{% endif %}">
+          <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6l8-3 8 3M4 6v12l8 3V9m0 0v12l8-3V6"/></svg>
+          <span class="crm-label">Catálogo de Cargas</span>
+        </a>
+        <a href="{% url 'crm:estudios' %}" title="Simulador de Estudio" class="crm-nav-link px-3 py-2 rounded-lg flex items-center gap-2 {% if 'estudio' in vn %}bg-white/15 text-accent{% else %}hover:bg-white/10{% endif %}">
+          <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span class="crm-label">Simulador de Estudio</span>
+        </a>
         <a href="{% url 'blog:manage' %}" title="Gestionar Blog" class="crm-nav-link px-3 py-2 rounded-lg flex items-center gap-2 {% if 'blog:' in vn %}bg-white/15 text-accent{% else %}hover:bg-white/10{% endif %}">
           <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
           <span class="crm-label">Gestionar Blog</span>
@@ -81,7 +89,7 @@
 
       <div class="mt-8 flex flex-col gap-2">
         <a href="{% url 'home' %}" title="Ver Landing"
-           class="crm-sidebar-action flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-bold text-primary transition hover:bg-accent/90">
+           class="btn-cta flex items-center justify-center gap-2 px-3 py-2 text-sm">
           <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5"/></svg>
           <span class="crm-label">Ver Landing</span>
         </a>
@@ -101,7 +109,7 @@
 
     <main id="crm-content" class="p-6 lg:p-10 lg:ml-0">
       <div class="mb-4">
-        <button id="crm-sidebar-toggle" type="button" class="inline-flex items-center gap-2 bg-primary text-white px-5 py-3 rounded-xl text-base font-bold shadow-sm"
+        <button id="crm-sidebar-toggle" type="button" class="btn-cta px-5 py-3 text-base"
                 aria-label="Alternar menú del CRM" aria-expanded="true" aria-controls="crm-sidebar">
           <span aria-hidden="true">☰</span>
           <span>Menú CRM</span>

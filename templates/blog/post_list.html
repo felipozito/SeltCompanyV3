@@ -31,7 +31,7 @@
 
   <div class="mt-8 flex flex-wrap items-center justify-between gap-4">
     <div class="flex flex-wrap items-center gap-2 text-sm">
-      <button class="px-4 py-2 rounded-full bg-primary text-white font-semibold">All Topics</button>
+      <button class="px-4 py-2 rounded-full bg-accent text-primary font-semibold">All Topics</button>
       <button class="px-4 py-2 rounded-full border border-slate-300 text-slate-600">Electrical Safety</button>
       <button class="px-4 py-2 rounded-full border border-slate-300 text-slate-600">Energy Saving</button>
       <button class="px-4 py-2 rounded-full border border-slate-300 text-slate-600">Smart Home</button>
@@ -40,7 +40,7 @@
 
     <form method="get" class="flex items-center gap-2">
       <input name="q" value="{{ query }}" placeholder="Search insights..." class="w-56 sm:w-72 rounded-xl border-slate-300 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
-      <button class="bg-primary text-white px-4 py-2.5 rounded-xl font-bold">Search</button>
+      <button class="btn-cta px-4 py-2.5 text-sm">Search</button>
     </form>
   </div>
 
@@ -71,7 +71,7 @@
   </div>
 
   <div class="mt-10 text-center">
-    <a href="{% url 'blog:list' %}" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold">Load More Articles <span>⌄</span></a>
+    <a href="{% url 'blog:list' %}" class="btn-cta px-6 py-3 text-sm">Load More Articles <span>⌄</span></a>
   </div>
 </section>
 
@@ -84,7 +84,7 @@
       <p class="mt-3 text-white/80">Get the latest electrical safety tips, efficiency guides, and industry news delivered directly to your inbox every month.</p>
       <form class="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
         <input type="email" placeholder="Your work email" class="w-full sm:w-[460px] rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/50">
-        <button type="button" class="bg-accent text-primary px-6 py-3 rounded-xl font-bold">Subscribe Now</button>
+        <button type="button" class="btn-cta px-6 py-3">Subscribe Now</button>
       </form>
       <p class="mt-3 text-xs text-white/60">By subscribing, you agree to our Privacy Policy and consent to receive updates.</p>
     </div>

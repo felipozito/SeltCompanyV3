@@ -3,15 +3,17 @@
 {% block content %}
 <h1 class="text-3xl font-black text-primary">Dashboard Overview</h1>
 <div class="mt-4 flex flex-wrap gap-3">
-  <a href="{% url 'blog:manage' %}" class="bg-primary text-white px-4 py-2 rounded-lg font-bold text-sm">+ Crear publicación</a>
-  <a href="{% url 'services:manage' %}" class="bg-accent text-primary px-4 py-2 rounded-lg font-bold text-sm">+ Crear servicio</a>
-  <a href="{% url 'crm:clients' %}" class="bg-slate-100 text-slate-800 px-4 py-2 rounded-lg font-bold text-sm">+ Registrar cliente</a>
+  <a href="{% url 'blog:manage' %}" class="btn-cta px-4 py-2 text-sm">+ Crear publicación</a>
+  <a href="{% url 'services:manage' %}" class="btn-cta px-4 py-2 text-sm">+ Crear servicio</a>
+  <a href="{% url 'crm:clients' %}" class="btn-cta px-4 py-2 text-sm">+ Registrar cliente</a>
+  <a href="{% url 'crm:catalogo' %}" class="btn-cta px-4 py-2 text-sm">Catálogo de Cargas</a>
+  <a href="{% url 'crm:estudios' %}" class="btn-cta px-4 py-2 text-sm">+ Nuevo Estudio de Carga</a>
 </div>
 <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
   <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Leads</p><p class="text-3xl font-black text-primary">{{ contacts_count }}</p></div>
   <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Clientes</p><p class="text-3xl font-black text-primary">{{ clients_count }}</p></div>
   <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Proformas</p><p class="text-3xl font-black text-primary">{{ proformas_count }}</p></div>
-  <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Posts</p><p class="text-3xl font-black text-primary">{{ blog_count }}</p></div>
+  <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Estudios carga</p><p class="text-3xl font-black text-primary">{{ estudios_count }}</p></div>
   <div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-sm text-slate-500">Servicios</p><p class="text-3xl font-black text-primary">{{ services_count }}</p></div>
 </div>
 

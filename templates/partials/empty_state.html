@@ -7,6 +7,6 @@
   <h3 class="text-lg font-extrabold text-primary">{{ title|default:'Sin datos' }}</h3>
   <p class="mt-1 max-w-sm text-sm text-slate-600">{{ message|default:'Aún no hay registros para mostrar.' }}</p>
   {% if action_url %}
-  <a href="{{ action_url }}" class="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white">{{ action_label|default:'Crear' }}</a>
+  <a href="{{ action_url }}" class="mt-4 btn-cta px-4 py-2 text-sm">{{ action_label|default:'Crear' }}</a>
   {% endif %}
 </div>

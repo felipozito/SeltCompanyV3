@@ -1,0 +1,46 @@
+{% extends 'base_crm.html' %}
+{% block title %}Nuevo Estudio de Carga · Selt CRM{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl space-y-6">
+  <div>
+    <p class="brand-sheen text-xs font-black uppercase tracking-[0.18em] text-accent">Simulador NEC 220</p>
+    <h1 class="mt-1 text-3xl font-black text-primary">Nuevo estudio de carga</h1>
+    <p class="mt-1 text-sm text-slate-500">Nombra el estudio y define el servicio; luego agrega el inventario desde el catálogo.</p>
+  </div>
+
+  <form method="post" class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    {% csrf_token %}
+    <label class="block">
+      <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nombre del estudio *</span>
+      <input name="nombre" required placeholder="Ej.: Residencia Av. 6 de Diciembre — TD-01"
+             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+    </label>
+    <label class="block">
+      <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Cliente</span>
+      <select name="cliente" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+        <option value="">— Sin cliente —</option>
+        {% for c in clientes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <div class="grid grid-cols-2 gap-4">
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Servicio</span>
+        <select name="servicio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="1F">Monofásico (1F)</option>
+          <option value="2F">Bifásico (2F)</option>
+          <option value="3F">Trifásico (3F)</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Voltaje de línea (V)</span>
+        <input name="voltaje" value="220" type="number" step="1"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm text-slate-900">
+      </label>
+    </div>
+    <button type="submit" class="btn-cta w-full px-6 py-3 text-sm">
+      Crear estudio y llenar inventario
+    </button>
+  </form>
+</div>
+{% endblock %}

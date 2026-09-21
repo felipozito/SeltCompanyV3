@@ -9,7 +9,7 @@
       {% csrf_token %}
       {% include 'partials/form_fields.html' %}
       {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-      <button class="w-full rounded-lg bg-primary py-3 font-bold text-white">Entrar</button>
+      <button class="btn-cta w-full py-3">Entrar</button>
     </form>
   </div>
 </section>

@@ -42,8 +42,8 @@
 <div class="proforma-toolbar no-print mx-auto mb-6 flex flex-wrap items-center justify-between gap-3">
   <a href="{% url 'crm:proformas' %}" class="rounded-lg px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100">&larr; Volver</a>
   <div class="flex flex-wrap gap-3">
-    <a href="{% url 'crm:proforma_edit' proforma.id %}" class="rounded-lg border border-primary/20 px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/5">Editar</a>
-    <a href="{% url 'crm:proforma_print' proforma.id %}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-primary hover:bg-accent/90">
+    <a href="{% url 'crm:proforma_edit' proforma.id %}" class="btn-cta px-5 py-2.5 text-sm">Editar</a>
+    <a href="{% url 'crm:proforma_print' proforma.id %}" target="_blank" rel="noopener" class="btn-cta px-5 py-2.5 text-sm">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6M6 18H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-1M7 14h10v7H7z"/></svg>
       Imprimir / Guardar como PDF
     </a>

@@ -1,0 +1,132 @@
+{% extends 'base_crm.html' %}
+{% block title %}{{ form_titulo }} · Selt CRM{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl space-y-6">
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <p class="brand-sheen text-xs font-black uppercase tracking-[0.18em] text-accent">
+        {{ form_titulo|default:'Nueva carga normativa' }}
+      </p>
+      <h1 class="mt-1 text-2xl font-black text-primary">
+        {% if es_editar %}{{ c.codigo }}{% else %}Nueva carga del catálogo{% endif %}
+      </h1>
+      <p class="mt-1 text-xs text-slate-500">
+        Fuente normativa única: al guardar se crea un registro de auditoría con motivo,
+        fecha y usuario (NEC Art. aplicable se conserva intacto).
+      </p>
+    </div>
+    {% if es_editar %}
+    <span class="brand-sheen inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-accent">
+      <span class="inline-block h-2 w-2 rounded-full bg-accent animate-pulse"></span>
+      Edición normativa editable
+    </span>
+    {% endif %}
+  </div>
+
+  {% if es_editar and c.norma %}
+  <div class="rounded-2xl border border-accent/30 bg-amber-50 p-4">
+    <div>
+      <p class="text-[11px] font-black uppercase tracking-widest text-slate-600">Código normativo inalterable</p>
+      <p class="mt-1 font-mono text-sm font-bold text-accent">{{ c.metodo_calculo|default:'NEC 220' }}</p>
+    </div>
+    <span class="rounded-lg bg-accent/15 px-3 py-1.5 font-mono text-xs font-black text-accent">{{ c.norma }}</span>
+  </div>
+  {% endif %}
+
+  <form method="post" novalidate class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Código</span>
+        <input name="codigo" value="{{ c.codigo|default:'' }}" required
+               placeholder="ILU-RES-042" pattern="[A-Z]{2,4}\-[A-Z]{3}\-\d{3}"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm uppercase text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Categoría</span>
+        <select name="categoria" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          {% for cod, nom in categorias %}<option value="{{ cod }}" {% if c.categoria == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
+        </select>
+      </label>
+
+      <label class="block sm:col-span-2">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Equipo</span>
+        <input name="equipo" value="{{ c.equipo|default:'' }}" required placeholder="Luminaria LED 12 W"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Potencia predeterminada</span>
+        <div class="flex gap-2">
+          <input name="potencia" value="{{ c.potencia|default:'1800' }}" type="number" step="0.01"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm tabular-nums text-slate-900">
+          <select name="unidad" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+            {% for cod, nom in unidades %}<option value="{{ cod }}" {% if c.unidad == cod %}selected{% endif %}>{{ cod }}</option>{% endfor %}
+          </select>
+        </div>
+      </label>
+
+      <div class="grid grid-cols-2 gap-2">
+        <label class="block">
+          <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FD %</span>
+          <input name="factor_demanda" value="{{ c.factor_demanda|default:'100' }}" type="number" step="0.01"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm tabular-nums text-slate-900">
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FP</span>
+          <input name="factor_potencia" value="{{ c.factor_potencia|default:'0.90' }}" type="number" step="0.001"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm tabular-nums text-slate-900">
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Voltaje</span>
+          <input name="voltaje" value="{{ c.voltaje|default:'120 V' }}" placeholder="120 V"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Fases</span>
+          <select name="fases" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+            {% for cod, nom in fases %}<option value="{{ cod }}" {% if c.fases == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Ref. NEC (Artículo)</span>
+        <input name="metodo_calculo" value="{{ c.metodo_calculo|default:'' }}" placeholder="NEC 220"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Motivo del cambio</span>
+        {% if es_editar %}
+        <input name="motivo" required placeholder="Ej.: equipo real instalado 9 kW"
+               class="w-full rounded-xl border border-accent bg-white px-3 py-2 text-sm text-slate-900 placeholder:italic placeholder:text-slate-400">
+        {% else %}
+        <input name="motivo" value="Alta de nueva carga en el catálogo" disabled
+               class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+        {% endif %}
+      </label>
+
+      {% if es_editar %}
+      <label class="block sm:col-span-2">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Observación técnica (se audita)</span>
+        <textarea name="obs_tecnica" rows="2" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">{{ c.obs_tecnica|default:'' }}</textarea>
+      </label>
+      {% endif %}
+    </div>
+
+    <div class="mt-5 flex flex-wrap items-center justify-end gap-3">
+      <a href="{% url 'crm:catalogo' %}" class="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancelar</a>
+      <button type="submit" class="btn-cta px-6 py-2.5 text-sm">
+        {% if es_editar %}Guardar cambios{% else %}Agregar al catálogo{% endif %}
+      </button>
+    </div>
+
+    <p class="mt-4 border-t border-slate-200 pt-3 text-[11px] text-slate-500">
+      Al guardar se escribe <strong class="text-slate-700">HistorialCarga</strong> con la fecha,
+      {{ request.user }} y el motivo — la referencia NEC queda inmutable y auditable.
+    </p>
+  </form>
+</div>
+{% endblock %}
