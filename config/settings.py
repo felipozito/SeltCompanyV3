@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'crm',
     'blog',
     'services',
+    'plans',
 ]
 
 MIDDLEWARE = [

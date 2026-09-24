@@ -1,0 +1,177 @@
+{% extends 'base_crm.html' %}
+{% block title %}Nueva cotización de planos · Selt CRM{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl space-y-6">
+  <div>
+    <p class="brand-sheen text-xs font-black uppercase tracking-[0.18em] text-accent">Cotizador de planos</p>
+    <h1 class="mt-1 text-3xl font-black text-primary">Nueva cotización de planos</h1>
+    <p class="mt-1 text-sm text-slate-500">Estima primero con la plantilla recomendada o define los datos del proyecto y carga el desglose.</p>
+  </div>
+
+  <details class="rounded-2xl border border-[#D4AF37]/40 bg-amber-50/40 p-5">
+    <summary class="cursor-pointer text-sm font-black tracking-wide text-slate-800">
+      Estimación rápida (recomendada / aproximada)
+    </summary>
+    <form method="get" class="mt-4 space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <label class="block">
+          <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de proyecto</span>
+          <select name="est_tipo" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+            {% for cod, nom in tipos %}
+            <option value="{{ cod }}" {% if est_values.est_tipo == cod %}selected{% endif %}>{{ nom }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Área (m²)</span>
+          <input name="est_area" type="number" step="0.1" min="0" value="{{ est_values.est_area|default:'0.0' }}"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm text-slate-900">
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº tableros</span>
+          <input name="est_tableros" type="number" min="0" value="{{ est_values.est_tableros|default:'1' }}"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm text-slate-900">
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº circuitos</span>
+          <input name="est_circuitos" type="number" min="0" value="{{ est_values.est_circuitos|default:'1' }}"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm text-slate-900">
+        </label>
+      </div>
+      <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+        <input name="est_integral" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-primary"
+               {% if est_values.est_integral %}checked{% endif %}>
+        <span class="text-sm font-bold text-slate-700">Proyecto integral (eléctrico + electrónico)</span>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Paquete recomendado</span>
+        <select name="est_opcion" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="recomendada" {% if est_values.est_opcion in '' or est_values.est_opcion == 'recomendada' %}selected{% endif %}>
+            Recomendada para el tipo ({{ recomendada_opcion }})</option>
+          {% for key, nombre, desc in opciones_plantilla %}
+          <option value="{{ key }}" {% if est_values.est_opcion == key %}selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit" class="rounded-xl border border-[#D4AF37] bg-[#D4AF37]/10 px-4 py-2 text-sm font-black text-slate-800">
+        Calcular estimación aproximada
+      </button>
+    </form>
+
+    {% if est %}
+    <div class="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div class="bg-slate-800 px-4 py-2">
+        <span class="text-xs font-black uppercase tracking-wider text-[#D4AF37]">Estimación · {{ est.opcion_label }}</span>
+      </div>
+      <div class="max-h-64 overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
+            <tr><th class="px-3 py-2 text-left">Entregable</th><th class="px-3 py-2 text-right">Cant.</th><th class="px-3 py-2 text-right">P. unit.</th><th class="px-3 py-2 text-right">Total</th></tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for linea in est.lineas %}
+            <tr class="{% if linea.es_electronico %}bg-blue-50/50{% endif %}">
+              <td class="px-3 py-1.5 text-slate-800"><span class="font-mono text-[10px] text-slate-400">{{ linea.codigo }}</span><br>{{ linea.nombre }}</td>
+              <td class="px-3 py-1.5 text-right font-mono">{{ linea.cantidad }}</td>
+              <td class="px-3 py-1.5 text-right font-mono">{{ linea.unitario|floatformat:2 }}</td>
+              <td class="px-3 py-1.5 text-right font-mono">{{ linea.total|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="space-y-1 border-t border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <div class="flex justify-between text-slate-600"><span>Subtotal ({{ est.n_items }} entregables)</span><span class="font-mono font-bold">$ {{ est.subtotal|floatformat:2 }}</span></div>
+        {% if est.desc_importe %}
+        <div class="flex justify-between text-emerald-700"><span>Descuento integral ({{ est.iva_pct }} %)</span><span class="font-mono">− $ {{ est.desc_importe|floatformat:2 }}</span></div>
+        {% endif %}
+        <div class="flex justify-between text-slate-600"><span>IVA {{ est.iva_pct }} %</span><span class="font-mono">$ {{ est.iva|floatformat:2 }}</span></div>
+        <div class="flex justify-between border-t border-slate-200 pt-1 text-base font-black text-primary"><span>Total estimado</span><span class="font-mono">$ {{ est.total|floatformat:2 }}</span></div>
+      </div>
+      <p class="px-4 py-2 text-[10px] text-slate-400">Valor aproximado referencial (mercado Ecuador). Al crear la cotización puedes cargar esta plantilla y ajustar cantidades y unidades.</p>
+    </div>
+    {% endif %}
+  </details>
+
+  <form method="post" class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    {% csrf_token %}
+    <label class="block">
+      <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nombre del proyecto *</span>
+      <input name="nombre" required placeholder="Ej.: Residencia Miraflores — Eléctrico y CCTV"
+             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+    </label>
+    <label class="block">
+      <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Cliente</span>
+      <select name="cliente" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+        <option value="">— Sin cliente —</option>
+        {% for c in clientes %}<option value="{{ c.id }}">{{ c.company|default:c.name }}</option>{% endfor %}
+      </select>
+      <span class="mt-1 block text-[10px] text-slate-400">Requerido solo al momento de generar la propuesta en Proformas.</span>
+    </label>
+    <label class="block">
+      <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Descripción corta</span>
+      <input name="descripcion" placeholder="Alcance resumido del juego de planos"
+             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+    </label>
+
+    <div class="grid grid-cols-2 gap-4">
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de proyecto</span>
+        <select name="tipo_proyecto" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          {% for cod, nom, recargo in tipos_recargo %}
+          <option value="{{ cod }}" {% if cod == 'RES' %}selected{% endif %}>
+            {{ nom }} · recargo +{{ recargo|floatformat:0 }} %
+          </option>
+          {% endfor %}
+        </select>
+        <span class="mt-1 block text-[10px] text-slate-400">Recargos editables en Parámetros del motor.</span>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Área (m²)</span>
+        <input name="area_m2" type="number" step="0.1" min="0" value="0.0"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm text-slate-900">
+        <span class="mt-1 block text-[10px] text-slate-400">Base para entregables por m² (red, CCTV, alarma).</span>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº tableros</span>
+        <input name="n_tableros" type="number" min="0" value="1"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº circuitos</span>
+        <input name="n_circuitos" type="number" min="0" value="1"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm text-slate-900">
+      </label>
+    </div>
+
+    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <input name="integral" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-[#D4AF37]">
+      <span>
+        <span class="block text-sm font-bold text-slate-700">Proyecto integral (eléctrico + electrónico)</span>
+        <span class="block text-xs text-slate-500">Descuento del {{ param_integral|floatformat:0 }} % sobre el bloque electrónico (data/CCTV/alarma).</span>
+      </span>
+    </label>
+
+    <label class="block">
+      <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Cargar plantilla al crear</span>
+      <select name="plantilla" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+        <option value="none">— Solo la ficha, sin entregables —</option>
+        <option value="recomendada">Recomendada según el tipo e integral</option>
+        {% for key, nombre, desc in opciones_plantilla %}
+        <option value="{{ key }}">{{ nombre }}</option>
+        {% endfor %}
+      </select>
+      <span class="mt-1 block text-[10px] text-slate-400">Las cantidades se calculan con los factores (área, tableros, circuitos); todo es ajustable luego.</span>
+    </label>
+
+    <label class="block">
+      <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Notas internas</span>
+      <textarea name="notas" rows="3" placeholder="Observaciones, plazos, condiciones particulares…"
+                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"></textarea>
+    </label>
+
+    <button type="submit" class="btn-cta w-full px-6 py-3 text-sm">Crear cotización (y cargar plantilla si elegiste una)</button>
+  </form>
+</div>
+{% endblock %}

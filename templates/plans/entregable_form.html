@@ -1,0 +1,74 @@
+{% extends 'base_crm.html' %}
+{% block title %}{{ form_titulo }} · Cotizador de Planos{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl space-y-6">
+  <div>
+    <p class="brand-sheen text-xs font-black uppercase tracking-[0.18em] text-accent">Catálogo de entregables</p>
+    <h1 class="mt-1 text-2xl font-black text-primary">
+      {% if es_editar %}{{ e.codigo }}{% else %}Nuevo entregable del catálogo{% endif %}
+    </h1>
+    <p class="mt-1 text-xs text-slate-500">
+      El precio base se multiplica por el recargo del tipo de proyecto y, si aplica, el descuento
+      integral — siempre en el catálogo, nunca quemado en el motor.
+    </p>
+  </div>
+
+  <form method="post" novalidate class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    {% csrf_token %}
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Código</span>
+        <input name="codigo" value="{{ e.codigo|default:'' }}" {% if es_editar %}readonly{% endif %} required
+               placeholder="PLAN-RED-001" pattern="[A-Z]{3,5}-[A-Z]{3}-\d{3}"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm uppercase text-slate-900 {% if es_editar %}bg-slate-50 text-slate-500{% endif %}">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Categoría</span>
+        <select name="categoria" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          {% for cod, nom in categorias %}<option value="{{ cod }}" {% if e.categoria == cod %}selected{% endif %}>{{ nom }}{% if cod in electronica %} · electrónico{% endif %}</option>{% endfor %}
+        </select>
+      </label>
+
+      <label class="block sm:col-span-2">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nombre</span>
+        <input name="nombre" value="{{ e.nombre|default:'' }}" required placeholder="Diseño de red estructurada (data/voz) por m²"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+      </label>
+
+      <label class="block sm:col-span-2">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Descripción</span>
+        <input name="descripcion" value="{{ e.descripcion|default:'' }}" placeholder="Detalle breve del entregable"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Precio base ($)</span>
+        <input name="precio_base" value="{{ e.precio_base|default:'0' }}" type="number" step="0.01" min="0"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm tabular-nums text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Unidad</span>
+        <select name="unidad" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          {% for cod, nom in unidades %}<option value="{{ cod }}" {% if e.unidad == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
+        </select>
+        <span class="mt-1 block text-[10px] text-slate-400">
+          m², tablero y circuito toman su cantidad de la ficha del proyecto; el resto la defines en el desglose.
+        </span>
+      </label>
+
+      <label class="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2">
+        <input name="editable" type="checkbox" {% if not e or e.editable %}checked{% endif %} class="h-4 w-4 rounded border-slate-300 text-primary">
+        Editable por el cotizador
+      </label>
+    </div>
+
+    <div class="mt-5 flex flex-wrap items-center justify-end gap-3">
+      <a href="{% url 'plans:entregables' %}" class="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancelar</a>
+      <button type="submit" class="btn-cta px-6 py-2.5 text-sm">
+        {% if es_editar %}Guardar cambios{% else %}Agregar al catálogo{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

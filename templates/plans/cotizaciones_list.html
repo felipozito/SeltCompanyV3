@@ -1,0 +1,76 @@
+{% extends 'base_crm.html' %}
+{% block title %}Cotizador de Planos | Selt CRM{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <p class="brand-sheen text-xs font-black uppercase tracking-[0.18em] text-accent">Eléctrico · Electrónico · Ecuador</p>
+    <h1 class="mt-1 text-3xl font-black text-primary">Cotizador de planos</h1>
+    <p class="mt-1 text-sm text-slate-500">Cotiza por entregables con recargo por tipo de proyecto e IVA 15%. Genera la propuesta en el pipeline de Proformas.</p>
+  </div>
+  <div class="flex flex-wrap gap-3">
+    <a href="{% url 'plans:entregables' %}" class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">Catálogo de entregables</a>
+    <a href="{% url 'plans:parametros' %}" class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">Parámetros del motor</a>
+    <a href="{% url 'plans:create' %}" class="btn-cta px-5 py-3 text-sm">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+      Nueva cotización
+    </a>
+  </div>
+</div>
+
+<section class="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-6">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-slate-200 text-left text-slate-500">
+        <th class="py-2">Proyecto</th>
+        <th>Cliente</th>
+        <th>Tipo</th>
+        <th class="text-right">Área (m²)</th>
+        <th class="text-right">Total estimado</th>
+        <th>Propuesta</th>
+        <th class="text-right">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cp in cotizaciones %}
+      <tr class="border-b border-slate-100 align-top">
+        <td class="py-3 font-semibold text-primary">
+          <a href="{% url 'plans:detail' cp.id %}" class="hover:underline">{{ cp.nombre }}</a>
+          {% if cp.integral %}<span class="ml-1 inline-block rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-violet-700">Integral</span>{% endif %}
+        </td>
+        <td class="py-3">{{ cp.cliente|default:'—' }}</td>
+        <td class="py-3">
+          <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold
+            {% if cp.tipo_proyecto == 'IND' %}bg-orange-100 text-orange-700
+            {% elif cp.tipo_proyecto == 'COM' %}bg-blue-100 text-blue-700
+            {% else %}bg-emerald-100 text-emerald-700{% endif %}">{{ cp.get_tipo_proyecto_display }}</span>
+        </td>
+        <td class="py-3 text-right tabular-nums">{{ cp.area_m2|floatformat:1 }}</td>
+        <td class="py-3 text-right font-semibold tabular-nums">$ {{ cp.total|floatformat:2 }}</td>
+        <td class="py-3">
+          {% if cp.proforma %}
+          <a href="{% url 'crm:proforma_detail' cp.proforma_id %}" class="text-xs font-bold text-primary hover:underline">{{ cp.proforma.reference }}</a>
+          {% else %}
+          <span class="text-xs text-slate-400">Sin generar</span>
+          {% endif %}
+        </td>
+        <td class="py-3">
+          <div class="flex items-center justify-end gap-2">
+            <a href="{% url 'plans:detail' cp.id %}" title="Ver" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-primary">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </a>
+            <form method="post" action="{% url 'plans:delete' cp.id %}" data-confirm="¿Eliminar la cotización «{{ cp.nombre }}» y su desglose? Esta acción no se puede deshacer.">
+              {% csrf_token %}
+              <button type="submit" title="Eliminar" class="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="py-6">{% include 'partials/empty_state.html' with title='Sin cotizaciones' message='Crea la primera cotización de planos para empezar.' %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

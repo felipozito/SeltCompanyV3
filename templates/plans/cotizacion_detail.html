@@ -1,0 +1,269 @@
+{% extends 'base_crm.html' %}
+{% block title %}{{ cp.nombre }} · Cotizador de planos{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <a href="{% url 'plans:list' %}" class="text-sm font-bold text-slate-500 hover:text-primary">&larr; Cotizaciones</a>
+      <div class="mt-1 flex flex-wrap items-center gap-2">
+        <h1 class="text-3xl font-black text-primary">{{ cp.nombre }}</h1>
+        <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-black uppercase tracking-wide
+          {% if cp.tipo_proyecto == 'IND' %}bg-orange-100 text-orange-700
+          {% elif cp.tipo_proyecto == 'COM' %}bg-blue-100 text-blue-700
+          {% else %}bg-emerald-100 text-emerald-700{% endif %}">{{ cp.get_tipo_proyecto_display }}</span>
+        {% if cp.integral %}
+        <span class="inline-block rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-violet-700">Integral</span>
+        {% endif %}
+        {% if cp.proforma %}
+        <a href="{% url 'crm:proforma_detail' cp.proforma_id %}" class="text-sm font-bold text-accent-ink underline">Propuesta {{ cp.proforma.reference }} &nearr;</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <form method="post" data-confirm="¿Regenerar cantidades y precios desde los factores (área, tableros, circuitos)?">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="recalcular">
+        <button type="submit" class="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Recalcular por factores</button>
+      </form>
+      {% if not cp.proforma %}
+      <form method="post" data-confirm="¿Generar la propuesta económica (Proforma {{ 'CPL' }}-…)? Podrás revisarla antes de emitirla.">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="generar_proforma">
+        <button type="submit" class="btn-cta px-5 py-2.5 text-sm">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3h8l4 4v14H4V3zM8 12h8M8 16h5"/></svg>
+          Generar propuesta
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-3">
+    <!-- ===== Desglose de entregables ===== -->
+    <section class="lg:col-span-2 space-y-4">
+      <div class="rounded-2xl border border-slate-200 bg-white p-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-extrabold text-primary">Desglose de entregables</h2>
+          <span class="text-xs font-bold text-slate-500">{{ resumen.filas|length }} rubro(s)</span>
+        </div>
+
+        {% if resumen.filas %}
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+                <th class="py-2">Entregable</th>
+                <th class="py-2">U.</th>
+                <th class="py-2 text-right">Cant.</th>
+                <th class="py-2 text-right">V. unit.</th>
+                <th class="py-2 text-right">Total</th>
+                <th class="py-2 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in resumen.filas %}
+              <tr class="border-b border-slate-100 align-top">
+                <td class="py-3 pr-3">
+                  <span class="font-mono text-[10px] text-accent-ink">{{ f.codigo }}</span>
+                  <p class="font-semibold text-slate-800">{{ f.nombre }}</p>
+                  <p class="text-[11px] text-slate-500">
+                    {{ f.categoria }}
+                    {% if f.descuento_integral %}<span class="ml-1 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">×{{ resumen.desc_factor|floatformat:2 }} integral</span>{% endif %}
+                  </p>
+                </td>
+                <td class="py-3 whitespace-nowrap text-xs text-slate-500">{{ f.unidad }}</td>
+                <td class="py-3 text-right tabular-nums">{{ f.rubro.cantidad|floatformat:2 }}</td>
+                <td class="py-3 text-right tabular-nums">$ {{ f.rubro.precio_unitario|floatformat:2 }}</td>
+                <td class="py-3 text-right font-semibold tabular-nums">$ {{ f.rubro.total|floatformat:2 }}</td>
+                <td class="py-3">
+                  <div class="flex items-center justify-end gap-1">
+                    <details class="relative">
+                      <summary class="cursor-pointer list-none rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-primary" title="Editar cantidad / precio">⋯</summary>
+                      <div class="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                        <form method="post" class="space-y-2">
+                          {% csrf_token %}
+                          <input type="hidden" name="accion" value="actualizar">
+                          <input type="hidden" name="rubro" value="{{ f.rubro.id }}">
+                          <label class="block">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Cantidad</span>
+                            <input name="cantidad" type="number" step="0.01" min="0" value="{{ f.rubro.cantidad }}"
+                                   class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-sm">
+                          </label>
+                          <label class="block">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Precio unitario ($)</span>
+                            <input name="precio_unitario" type="number" step="0.01" min="0" value="{{ f.rubro.precio_unitario }}"
+                                   class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-sm">
+                          </label>
+                          <button type="submit" class="btn-cta w-full px-3 py-1.5 text-xs">Guardar rubro</button>
+                        </form>
+                      </div>
+                    </details>
+                    <form method="post" data-confirm="¿Quitar «{{ f.nombre }}» del desglose?">
+                      {% csrf_token %}
+                      <input type="hidden" name="accion" value="eliminar">
+                      <input type="hidden" name="rubro" value="{{ f.rubro.id }}">
+                      <button type="submit" title="Eliminar" class="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="mt-4 text-sm text-slate-500">Aún no hay entregables. Agrega desde el catálogo.</p>
+        {% endif %}
+      </div>
+
+      <!-- ===== Plantillas recomendadas ===== -->
+      <section class="rounded-2xl border-2 border-[#D4AF37]/60 bg-amber-50/30 p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-lg font-extrabold text-primary">Paquetes recomendados</h2>
+          <span class="text-[11px] font-bold text-slate-500">cantidades estimadas desde los factores</span>
+        </div>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2">
+          {% for card in plantilla_cards %}
+          <div class="relative rounded-xl border p-4 {{ card.recomendada|yesno:'border-[#D4AF37] bg-white shadow-md,border-slate-200 bg-white/70' }}">
+            {% if card.recomendada %}
+            <span class="absolute -top-2.5 right-3 rounded-full bg-[#D4AF37] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Recomendada</span>
+            {% endif %}
+            <h3 class="text-sm font-black {{ card.recomendada|yesno:'text-primary,text-slate-700' }}">{{ card.nombre }}</h3>
+            <p class="mt-1 text-[11px] leading-snug text-slate-500">{{ card.descripcion }}</p>
+            <div class="mt-3 flex items-center justify-between text-sm">
+              <span class="text-xs {{ card.n_faltantes|yesno:'text-amber-700,text-emerald-700' }}">
+                {% if card.n_faltantes %}{{ card.n_faltantes }} por agregar{% else %}completa ✓{% endif %}
+              </span>
+              <span class="font-black text-primary">$ {{ card.total|floatformat:2 }}</span>
+            </div>
+            <div class="mt-1 flex items-center justify-between text-[10px] text-slate-400">
+              <span>{{ card.n_items }} entregables{% if card.n_en_desglose %} · {{ card.n_en_desglose }} ya cargados{% endif %}</span>
+            </div>
+            {% if card.subtotal_faltante %}
+            <div class="mt-1 flex items-center justify-between text-[10px] font-bold text-amber-700">
+              <span>Faltante estimado</span>
+              <span>$ {{ card.subtotal_faltante|floatformat:2 }} + IVA</span>
+            </div>
+            {% endif %}
+            <form method="post" class="mt-3">
+              {% csrf_token %}
+              <input type="hidden" name="accion" value="cargar_plantilla">
+              <input type="hidden" name="opcion" value="{{ card.opcion }}">
+              <button type="submit" class="w-full rounded-lg px-3 py-2 text-xs font-black
+                {{ card.recomendada|yesno:'btn-cta,border border-slate-300 text-slate-600 hover:bg-slate-100' }}">
+                Cargar esta plantilla
+              </button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="mt-3 text-[10px] text-slate-400">Añade solo los entregables que falten; los ya presentes se respetan.</p>
+      </section>
+      <details class="rounded-2xl border border-slate-200 bg-white p-6">
+        <summary class="cursor-pointer list-none text-lg font-extrabold text-primary">+ Agregar entregable del catálogo</summary>
+        <form method="post" class="mt-4 grid gap-4 sm:grid-cols-3">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="agregar">
+          <label class="block sm:col-span-2">
+            <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Entregable</span>
+            <select name="entregable" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+              {% for cod, nom in categorias %}
+              <optgroup label="{{ nom }}">
+                {% for e in entregables %}
+                {% if e.categoria == cod %}
+                <option value="{{ e.id }}">{{ e.codigo }} — {{ e.nombre }} (${{ e.precio_base|floatformat:2 }}/{{ e.get_unidad_display }})</option>
+                {% endif %}
+                {% endfor %}
+              </optgroup>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Cantidad</span>
+            <input name="cantidad" type="number" step="0.01" min="0"
+                   placeholder="Auto (m²/tableros/circuitos)"
+                   class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+          </label>
+          <button type="submit" class="btn-cta px-5 py-2.5 text-sm sm:col-span-3">Agregar al desglose</button>
+        </form>
+      </details>
+    </section>
+
+    <!-- ===== Resumen económico + ficha ===== -->
+    <aside class="space-y-4">
+      <section class="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 class="text-lg font-extrabold text-primary">Resumen económico</h2>
+        <dl class="mt-4 space-y-2 text-sm">
+          <div class="flex justify-between"><dt class="text-slate-500">Recargo tipo ({{ cp.get_tipo_proyecto_display }})</dt><dd class="font-mono font-bold">×{{ resumen.recargo|floatformat:2 }}</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">Subtotal base (antes desc. integral)</dt><dd class="tabular-nums">$ {{ resumen.subtotal_sin_desc|floatformat:2 }}</dd></div>
+          {% if resumen.desc_importe %}
+          <div class="flex justify-between text-violet-700"><dt>Descuento integral (electrónico)</dt><dd class="tabular-nums">- $ {{ resumen.desc_importe|floatformat:2 }}</dd></div>
+          {% endif %}
+          <div class="flex justify-between"><dt class="font-semibold text-slate-700">Subtotal</dt><dd class="font-semibold tabular-nums">$ {{ resumen.subtotal|floatformat:2 }}</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">IVA {{ param_iva|floatformat:0 }}%</dt><dd class="tabular-nums">$ {{ resumen.iva|floatformat:2 }}</dd></div>
+          <div class="flex justify-between border-t border-slate-200 pt-2"><dt class="text-lg font-black text-primary">TOTAL</dt><dd class="text-lg font-black tabular-nums text-primary">$ {{ resumen.total|floatformat:2 }}</dd></div>
+        </dl>
+        <p class="mt-3 text-[11px] text-slate-400">
+          IVA {{ param_iva|floatformat:0 }}% (vigente en Ecuador). La propuesta se materializa en Proformas y aplica los términos del pipeline existente.
+        </p>
+      </section>
+
+      <details class="rounded-2xl border border-slate-200 bg-white p-6">
+        <summary class="cursor-pointer list-none text-lg font-extrabold text-primary">Ficha del proyecto</summary>
+        <form method="post" class="mt-4 space-y-3">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="guardar_ficha">
+          <label class="block">
+            <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Nombre</span>
+            <input name="nombre" value="{{ cp.nombre }}" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm">
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Descripción</span>
+            <input name="descripcion" value="{{ cp.descripcion }}" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm">
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Cliente</span>
+            <select name="cliente" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm">
+              <option value="">— Sin cliente —</option>
+              {% for c in clientes %}<option value="{{ c.id }}" {% if cp.cliente_id == c.id %}selected{% endif %}>{{ c.company|default:c.name }}</option>{% endfor %}
+            </select>
+          </label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="block">
+              <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Tipo</span>
+              <select name="tipo_proyecto" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                {% for cod, nom in tipos %}<option value="{{ cod }}" {% if cp.tipo_proyecto == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Área m²</span>
+              <input name="area_m2" type="number" step="0.1" min="0" value="{{ cp.area_m2 }}" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-right text-sm">
+            </label>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block">
+              <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Tableros</span>
+              <input name="n_tableros" type="number" min="0" value="{{ cp.n_tableros }}" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-right text-sm">
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Circuitos</span>
+              <input name="n_circuitos" type="number" min="0" value="{{ cp.n_circuitos }}" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-right text-sm">
+            </label>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-slate-700">
+            <input name="integral" type="checkbox" {% if cp.integral %}checked{% endif %} class="h-4 w-4 rounded border-slate-300 text-primary">
+            Proyecto integral (descuento del {{ param_integral|floatformat:0 }} % a electrónico)
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Notas</span>
+            <textarea name="notas" rows="3" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm">{{ cp.notas }}</textarea>
+          </label>
+          <button type="submit" class="btn-cta w-full px-4 py-2 text-sm">Guardar ficha</button>
+        </form>
+      </details>
+    </aside>
+  </div>
+</div>
+{% endblock %}

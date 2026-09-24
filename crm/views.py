@@ -1010,6 +1010,7 @@ def estudio_detail(request, estudio_id):
         'clientes': Client.objects.order_by('name'),
         'cat_choices': dict(CargaNormativa.CATEGORIA_CHOICES),
         'mat_options': [('Cu', 'Cobre'), ('Al', 'Aluminio')],
+        'voltajes_posibles': (110, 120, 127, 220),
         'estrato_choices': EstudioCarga._meta.get_field('estrato').choices,
         'tipo_estudio_choices': EstudioCarga._meta.get_field('tipo_estudio').choices,
         'param_fp': _param('FP_PROYECTO', '0.85'),

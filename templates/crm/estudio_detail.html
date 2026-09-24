@@ -46,88 +46,17 @@
     <form method="post" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {% csrf_token %}
       <input type="hidden" name="accion" value="guardar_ficha">
+
+      <div class="col-span-full -mb-1 mt-1 flex items-center gap-2 border-b border-slate-200 pb-1.5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 text-slate-400">
+          <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>
+        </svg>
+        <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-500">Datos generales</h4>
+      </div>
       <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nombre</span>
-        <input name="nombre" value="{{ estudio.nombre }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Servicio</span>
-        <select name="servicio" id="id-servicio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-          <option value="1F" {% if estudio.servicio == '1F' %}selected{% endif %}>Monofásico</option>
-          <option value="2F" {% if estudio.servicio == '2F' %}selected{% endif %}>Bifásico</option>
-          <option value="3F" {% if estudio.servicio == '3F' %}selected{% endif %}>Trifásico</option>
-        </select>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Voltaje fase–neutro (V)</span>
-        <input name="voltaje" id="voltaje-ficha" value="{{ estudio.voltaje_fase }}" list="datalist-voltajes"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
-        <span class="mt-1 block text-[10px] text-slate-400">
-          Recomendado: <span class="font-mono font-bold text-slate-600" id="rec-voltaje">120 V</span> fase–neutro
-          → línea <span class="font-mono font-bold text-slate-600" id="rec-linea">120 V</span>
-        </span>
-        <datalist id="datalist-voltajes">
-          <option value="110"><option value="120"><option value="127"><option value="220">
-        </datalist>
-      </label>
-      <label class="block sm:col-span-2">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Localización</span>
-        <input name="localizacion" value="{{ estudio.localizacion|default:'' }}"
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nombre <span class="text-red-500" title="Obligatorio">*</span></span>
+        <input name="nombre" value="{{ estudio.nombre }}" required
                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de estudio (EEQ A-11.02)</span>
-        <select name="tipo_estudio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-          {% for cod, nom in tipo_estudio_choices %}<option value="{{ cod }}" {% if estudio.tipo_estudio == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
-        </select>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Estrato de consumo (RES)</span>
-        <select name="estrato" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-          <option value="">— Sin estrato (justificativo) —</option>
-          {% for cod, nom in estrato_choices %}<option value="{{ cod }}" {% if estudio.estrato == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
-        </select>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Zona urbano / rural</span>
-        <select name="zona_urbano_rural" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-          <option value="URB" {% if estudio.zona_urbano_rural == 'URB' %}selected{% endif %}>Urbana</option>
-          <option value="RUR" {% if estudio.zona_urbano_rural == 'RUR' %}selected{% endif %}>Rural</option>
-        </select>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº usuarios proyectados (período diseño)</span>
-        <input name="usuarios_proyectados" value="{{ estudio.usuarios_proyectados }}" type="number" min="0"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">DAP · Alumbrado público (kW)</span>
-        <input name="dap_kw" value="{{ estudio.dap_kw|floatformat:3 }}" type="number" step="0.001" min="0"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">N abonados comerciales (N)</span>
-        <input name="n_abonados" value="{{ estudio.n_abonados_comercial }}" type="number" min="1"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FD diversidad (A-11-D1) — vacío = auto</span>
-        <input name="fd_diversidad" value="{{ estudio.fd_factor_diversidad|default:'' }}" type="number" step="0.01" min="1"
-               placeholder="automático"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
-      </label>
-      <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
-        <input type="checkbox" name="es_camara_transformacion" {% if estudio.es_camara_transformacion %}checked{% endif %} class="h-4 w-4 accent-slate-800">
-        Cámara de transformación (DPT 1% · Ec. 2)
-      </label>
-      <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
-        <input type="checkbox" name="subestacion_taps" {% if estudio.subestacion_taps %}checked{% endif %} class="h-4 w-4 accent-slate-800">
-        Subestación con derivaciones (taps) → caída +0,5%
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº usuarios</span>
-        <input name="numero_usuarios" value="{{ estudio.numero_usuarios }}" type="number" min="1"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
       </label>
       <label class="block">
         <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Fecha</span>
@@ -144,11 +73,112 @@
         <input name="registro_lp" value="{{ estudio.registro_lp|default:'' }}" placeholder="LP: 1034-2021-..."
                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
       </label>
-      <label class="block">
+      <label class="block sm:col-span-2">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Localización</span>
+        <input name="localizacion" value="{{ estudio.localizacion|default:'' }}" placeholder="Provincia · Cantón · Ciudad · Sector"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+      </label>
+      <label class="block sm:col-span-2">
         <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº expediente EEQ</span>
         <input name="expediente_eeq" value="{{ estudio.expediente_eeq|default:'' }}" placeholder="EEQ-2022-I.2163"
                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
       </label>
+
+      <div class="col-span-full -mb-1 mt-1 flex items-center gap-2 border-b border-slate-200 pb-1.5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 text-slate-400">
+          <path d="M4 4h16v5H4zM7 9v9m5-9v9m5-9v9"/><path d="M3 20h18"/>
+        </svg>
+        <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-500">Metodología EEQ A-11.02</h4>
+      </div>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de estudio <span class="text-red-500" title="Obligatorio">*</span></span>
+        <select name="tipo_estudio" id="id-tipo-estudio" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          {% for cod, nom in tipo_estudio_choices %}<option value="{{ cod }}" {% if estudio.tipo_estudio == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Zona urbano / rural <span class="text-red-500" title="Obligatorio">*</span></span>
+        <select name="zona_urbano_rural" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="URB" {% if estudio.zona_urbano_rural == 'URB' %}selected{% endif %}>Urbana</option>
+          <option value="RUR" {% if estudio.zona_urbano_rural == 'RUR' %}selected{% endif %}>Rural</option>
+        </select>
+      </label>
+      <label class="block" id="grupo-estrato">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Estrato de consumo (RES)</span>
+        <select name="estrato" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="">— Sin estrato (justificativo) —</option>
+          {% for cod, nom in estrato_choices %}<option value="{{ cod }}" {% if estudio.estrato == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº usuarios <span class="text-red-500" title="Obligatorio">*</span></span>
+        <input name="numero_usuarios" value="{{ estudio.numero_usuarios }}" type="number" min="1" required
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº usuarios proyectados (período diseño)</span>
+        <input name="usuarios_proyectados" value="{{ estudio.usuarios_proyectados }}" type="number" min="0"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">DAP · Alumbrado público (kW)</span>
+        <input name="dap_kw" value="{{ estudio.dap_kw|floatformat:3 }}" type="number" step="0.001" min="0"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">N abonados comerciales (N)</span>
+        <input name="n_abonados" value="{{ estudio.n_abonados_comercial }}" type="number" min="1"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block sm:col-span-2">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FD diversidad (A-11-D1) — vacío = automático</span>
+        <input name="fd_diversidad" value="{{ estudio.fd_factor_diversidad|default:'' }}" type="number" step="0.01" min="1"
+               placeholder="Ej.: 3.80 (vacío usa la tabla A-11-D1)"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+
+      <div class="col-span-full -mb-1 mt-1 flex items-center gap-2 border-b border-slate-200 pb-1.5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 text-slate-400">
+          <path d="M13 2 4 14h6l-1 8 9-12h-6z"/>
+        </svg>
+        <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-500">Sistema eléctrico / servicio</h4>
+      </div>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Servicio <span class="text-red-500" title="Obligatorio">*</span></span>
+        <select name="servicio" id="id-servicio" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="1F" {% if estudio.servicio == '1F' %}selected{% endif %}>Monofásico (1F)</option>
+          <option value="2F" {% if estudio.servicio == '2F' %}selected{% endif %}>Bifásico (2F)</option>
+          <option value="3F" {% if estudio.servicio == '3F' %}selected{% endif %}>Trifásico (3F)</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Voltaje fase–neutro (V) <span class="text-red-500" title="Obligatorio">*</span></span>
+        <select name="voltaje" id="voltaje-ficha" required
+                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+          {% for v in voltajes_posibles %}
+          <option value="{{ v }}" {% if estudio.voltaje_fase == v %}selected{% endif %}>{{ v }} V</option>
+          {% endfor %}
+        </select>
+        <span class="mt-1 block text-[10px] text-slate-400">
+          Recomendado: <span class="font-mono font-bold text-slate-600" id="rec-voltaje">120 V</span> fase–neutro
+          → línea <span class="font-mono font-bold text-slate-600" id="rec-linea">120 V</span>
+        </span>
+      </label>
+      <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
+        <input type="checkbox" name="es_camara_transformacion" {% if estudio.es_camara_transformacion %}checked{% endif %} class="h-4 w-4 accent-slate-800">
+        Cámara de transformación (DPT 1% · Ec. 2)
+      </label>
+      <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
+        <input type="checkbox" name="subestacion_taps" {% if estudio.subestacion_taps %}checked{% endif %} class="h-4 w-4 accent-slate-800">
+        Subestación con derivaciones (taps) → caída +0,5%
+      </label>
+
+      <div class="col-span-full -mb-1 mt-1 flex items-center gap-2 border-b border-slate-200 pb-1.5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 text-slate-400">
+          <path d="m6 10 6-6 6 6M8 14l2 2 8-8m-11 6 3 3"/>
+        </svg>
+        <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-500">Conductor y línea</h4>
+      </div>
       <label class="block">
         <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Material conductor</span>
         <select name="conductor_material" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
@@ -157,11 +187,14 @@
       </label>
       <label class="block">
         <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Longitud línea (m)</span>
-        <input name="longitud" value="{{ estudio.longitud_linea|default:'' }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+        <input name="longitud" value="{{ estudio.longitud_linea|default:'' }}"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
       </label>
-      <button type="submit" class="btn-cta px-4 py-2.5 text-sm sm:col-span-2 lg:col-span-1">
-        Guardar ficha
-      </button>
+      <div class="flex items-end">
+        <button type="submit" class="btn-cta px-6 py-2.5 text-sm">
+          Guardar ficha
+        </button>
+      </div>
     </form>
   </section>
   <!-- INVENTARIO DE CARGAS -->
@@ -770,8 +803,19 @@
   }
   if (selSrv && inpVolt) {
     selSrv.addEventListener('change', actualizarVoltaje);
-    inpVolt.addEventListener('input', actualizarVoltaje);
+    inpVolt.addEventListener('change', actualizarVoltaje);
     actualizarVoltaje();
+  }
+
+  // Estrato solo aplica a estudios residenciales (RES).
+  var selTipo = document.getElementById('id-tipo-estudio');
+  var grpEstrato = document.getElementById('grupo-estrato');
+  function aplicarEstrato() {
+    if (grpEstrato) { grpEstrato.style.display = (selTipo && selTipo.value === 'RES') ? '' : 'none'; }
+  }
+  if (selTipo) {
+    selTipo.addEventListener('change', aplicarEstrato);
+    aplicarEstrato();
   }
 
   // Auto-recalculo: al modificar cualquier valor de una fila del inventario
