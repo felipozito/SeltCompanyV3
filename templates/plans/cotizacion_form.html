@@ -44,6 +44,14 @@
                {% if est_values.est_integral %}checked{% endif %}>
         <span class="text-sm font-bold text-slate-700">Proyecto integral (eléctrico + electrónico)</span>
       </label>
+      <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+        <input name="est_plano" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-primary"
+               {% if est_values.est_plano != 'off' %}checked{% endif %}>
+        <span>
+          <span class="block text-sm font-bold text-slate-700">Dispone de plano arquitectónico</span>
+          <span class="block text-xs text-slate-500">Si NO lo tienes se aplica un +{{ param_sin_plano|floatformat:0 }} % en los levantamientos (replanteo desde cero).</span>
+        </span>
+      </label>
       <label class="block">
         <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Paquete recomendado</span>
         <select name="est_opcion" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
@@ -85,6 +93,9 @@
         <div class="flex justify-between text-slate-600"><span>Subtotal ({{ est.n_items }} entregables)</span><span class="font-mono font-bold">$ {{ est.subtotal|floatformat:2 }}</span></div>
         {% if est.desc_importe %}
         <div class="flex justify-between text-emerald-700"><span>Descuento integral ({{ est.iva_pct }} %)</span><span class="font-mono">− $ {{ est.desc_importe|floatformat:2 }}</span></div>
+        {% endif %}
+        {% if est.replan_importe %}
+        <div class="flex justify-between text-amber-700"><span>Replanteo sin plano arquitectónico (+{{ param_sin_plano|floatformat:0 }} % en levantamientos)</span><span class="font-mono">+ $ {{ est.replan_importe|floatformat:2 }}</span></div>
         {% endif %}
         <div class="flex justify-between text-slate-600"><span>IVA {{ est.iva_pct }} %</span><span class="font-mono">$ {{ est.iva|floatformat:2 }}</span></div>
         <div class="flex justify-between border-t border-slate-200 pt-1 text-base font-black text-primary"><span>Total estimado</span><span class="font-mono">$ {{ est.total|floatformat:2 }}</span></div>
@@ -150,6 +161,15 @@
       <span>
         <span class="block text-sm font-bold text-slate-700">Proyecto integral (eléctrico + electrónico)</span>
         <span class="block text-xs text-slate-500">Descuento del {{ param_integral|floatformat:0 }} % sobre el bloque electrónico (data/CCTV/alarma).</span>
+      </span>
+    </label>
+
+    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <input name="plano_arquitectonico" type="checkbox" checked
+             class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-[#D4AF37]">
+      <span>
+        <span class="block text-sm font-bold text-slate-700">Dispone de plano arquitectónico</span>
+        <span class="block text-xs text-slate-500">Sin plano base se cobra un +{{ param_sin_plano|floatformat:0 }} % en los levantamientos por replanteo desde cero (recargo editable).</span>
       </span>
     </label>
 

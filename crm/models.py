@@ -8,11 +8,6 @@ ESTRATO_CHOICES = [('A1', 'A1 (501–900 kWh/mes)'), ('A', 'A (351–500)'),
                    ('B', 'B (251–350)'), ('C', 'C (151–250)'),
                    ('D', 'D (101–150)'), ('E', 'E (0–100)')]
 
-# Factores de coincidencia FCn para 1–4 usuarios — EEQ Apéndice A-11-B1.
-FC_COINCIDENCIA = {1: Decimal('100.00'), 2: Decimal('80.00'),
-                   3: Decimal('73.3'), 4: Decimal('70.00'),
-                   5: Decimal('67.5')}
-
 
 class ContactLead(models.Model):
     STATUS_NEW = 'new'
@@ -224,11 +219,6 @@ class CargaNormativa(models.Model):
         return f'[{self.codigo}] {self.equipo} ({self.potencia} {self.unidad})'
 
     @property
-    def fuente(self):
-        """Fuente normativa principal de la carga."""
-        return f'NEC {self.norma.codigo} · {self.metodo_calculo or "General"}'
-
-    @property
     def color_clase(self):
         """Clase de color Tailwind de la categoría (para filas del catálogo)."""
         return self.CATEGORIA_COLORES.get(self.categoria, 'text-slate-300')
@@ -409,30 +399,6 @@ class ItemEstudio(models.Model):
         self.factor_demanda = self.ffun * self.fsn / Decimal('100')
         self.factor_demanda = self.factor_demanda.quantize(Decimal('0.01'))
         super().save(*args, **kwargs)
-
-    @property
-    def potencia_w(self):
-        """Potencia nominal unitaria en vatios."""
-        return self.potencia_kw * Decimal('1000')
-
-    @property
-    def cir_w(self):
-        """CIR — Carga Instalada Resultante = Pn × Cant × FFUn."""
-        return self.potencia_w * self.cantidad * self.ffun / Decimal('100')
-
-    @property
-    def dmu_w(self):
-        """DMU — Demanda Máxima Unitaria = CIR × FSn."""
-        return self.cir_w * self.fsn / Decimal('100')
-
-    @property
-    def potencia_total_kw(self):
-        return self.potencia_kw * self.cantidad
-
-    @property
-    def demanda_kw(self):
-        """Demanda del ítem = DMU(W)/1000."""
-        return self.dmu_w / Decimal('1000')
 
     def __str__(self):
         return f'{self.carga.codigo} × {self.cantidad}'

@@ -66,6 +66,16 @@ def _resumen(cotizacion):
         desc_factor = pricing.descuento_factor()
         desc_teorico = (subtotal_elec * (Decimal('1') - desc_factor)).quantize(Decimal('0.01'))
 
+    # Recargo por relevamiento sin plano arquitectónico (solo entregables LEV).
+    replan_factor = pricing.sa_replanteo_factor(cotizacion)
+    replan_importe = Decimal('0.00')
+    if replan_factor > Decimal('1'):
+        subtotal_lev = sum((r.total for r in cotizacion.rubros.all()
+                            if str(r.entregable.categoria or '').upper() == 'LEV'),
+                           Decimal('0.00'))
+        replan_importe = (subtotal_lev * (Decimal('1')
+                                          - Decimal('1') / replan_factor)).quantize(Decimal('0.01'))
+
     # Los precios unitarios de los rubros YA incluyen el descuento integral
     # (base × recargo × 0,90), así que el subtotal es el valor neto final.
     gravado = subtotal
@@ -79,6 +89,8 @@ def _resumen(cotizacion):
         'subtotal_elec': subtotal_elec,
         'desc_factor': desc_factor,
         'desc_importe': desc_teorico,
+        'replan_factor': replan_factor,
+        'replan_importe': replan_importe,
         'gravado': gravado,
         'iva': iva,
         'total': total,
@@ -91,7 +103,7 @@ def _resumen(cotizacion):
 # ============================================================================
 
 def _estimacion(opcion, tipo, area, n_tableros, n_circuitos, integral,
-                cotizacion=None):
+                cotizacion=None, plano=True):
     """Desglose aproximado de una plantilla SIN escribir en la base.
     Si se pasa una cotización, los entregables ya presentes en el desglose se
     valoran con SU cantidad y precio reales (solo se estima lo que falta), de
@@ -103,6 +115,7 @@ def _estimacion(opcion, tipo, area, n_tableros, n_circuitos, integral,
         n_tableros=max(0, int(_dec(n_tableros, '1'))),
         n_circuitos=max(0, int(_dec(n_circuitos, '1'))),
         integral=integral,
+        plano_arquitectonico=plano,
     )
     presentes = {}
     if cotizacion is not None:
@@ -130,6 +143,7 @@ def _estimacion(opcion, tipo, area, n_tableros, n_circuitos, integral,
             'codigo': e.codigo,
             'nombre': e.nombre,
             'categoria': e.get_categoria_display(),
+            'categoria_codigo': e.categoria,
             'unidad': e.get_unidad_display(),
             'cantidad': cantidad,
             'unitario': unitario,
@@ -145,6 +159,14 @@ def _estimacion(opcion, tipo, area, n_tableros, n_circuitos, integral,
     iva_pct = pricing.param('IVA_PLANOS', '15.00')
     iva = (subtotal * iva_pct / Decimal('100')).quantize(Decimal('0.01'))
     n_faltantes = sum(1 for l in lineas if not l['en_desglose'])
+
+    replan_factor = pricing.sa_replanteo_factor(pseudo)
+    replan_importe = Decimal('0.00')
+    if replan_factor > Decimal('1'):
+        lev_total = sum((l['total'] for l in lineas
+                         if str(l['categoria_codigo'] or '').upper() == 'LEV'), Decimal('0.00'))
+        replan_importe = (lev_total * (Decimal('1')
+                                       - Decimal('1') / replan_factor)).quantize(Decimal('0.01'))
     return {
         'opcion': opcion,
         'lineas': lineas,
@@ -155,6 +177,8 @@ def _estimacion(opcion, tipo, area, n_tableros, n_circuitos, integral,
         'subtotal_faltante': subtotal_faltante,
         'subtotal_sin_desc': (subtotal + desc_importe).quantize(Decimal('0.01')),
         'desc_importe': desc_importe,
+        'replan_factor': replan_factor,
+        'replan_importe': replan_importe,
         'gravado': subtotal,
         'iva': iva,
         'iva_pct': iva_pct,
@@ -214,6 +238,7 @@ def cotizacion_create(request):
             n_tableros=max(0, int(_dec(request.POST.get('n_tableros'), '1'))),
             n_circuitos=max(0, int(_dec(request.POST.get('n_circuitos'), '1'))),
             integral=request.POST.get('integral') == 'on',
+            plano_arquitectonico=request.POST.get('plano_arquitectonico') == 'on',
             notas=request.POST.get('notas', ''),
             creado_por=request.user,
         )
@@ -241,6 +266,7 @@ def cotizacion_create(request):
     if request.GET.get('est_opcion'):
         tipo = request.GET.get('est_tipo', 'RES')
         integral = request.GET.get('est_integral') == 'on'
+        plano = request.GET.get('est_plano') != 'off'
         opcion = request.GET.get('est_opcion', 'recomendada')
         if opcion == 'recomendada':
             opcion = plantillas.recomendada_opcion(tipo, integral)
@@ -250,6 +276,7 @@ def cotizacion_create(request):
             request.GET.get('est_tableros', '1'),
             request.GET.get('est_circuitos', '1'),
             integral,
+            plano=plano,
         )
         est['opcion_label'] = dict(
             (k, nombre) for k, nombre, _ in plantillas.opciones_plantilla()
@@ -262,6 +289,7 @@ def cotizacion_create(request):
         'tipos_recargo': [(t, n, pricing.param(f'RECARGO_{t}', '1.00'))
                           for t, n in CotizacionPlanos.TIPO_CHOICES],
         'param_integral': pricing.param('DESCUENTO_INTEGRAL', '10'),
+        'param_sin_plano': pricing.param('RECARGO_SIN_PLANO', '15'),
         'opciones_plantilla': plantillas.opciones_plantilla(),
         'recomendada_opcion': plantillas.recomendada_opcion(
             request.GET.get('est_tipo', 'RES'),
@@ -269,7 +297,7 @@ def cotizacion_create(request):
         'est': est,
         'est_values': {k: request.GET.get(k, '') for k in
                        ('est_tipo', 'est_area', 'est_tableros', 'est_circuitos',
-                        'est_integral', 'est_opcion')},
+                        'est_integral', 'est_plano', 'est_opcion')},
     }
     return render(request, 'plans/cotizacion_form.html', context)
 
@@ -356,6 +384,7 @@ def cotizacion_detail(request, cotizacion_id):
             cotizacion.n_tableros = max(0, int(_dec(request.POST.get('n_tableros'), '1')))
             cotizacion.n_circuitos = max(0, int(_dec(request.POST.get('n_circuitos'), '1')))
             cotizacion.integral = request.POST.get('integral') == 'on'
+            cotizacion.plano_arquitectonico = request.POST.get('plano_arquitectonico') == 'on'
             cotizacion.notas = request.POST.get('notas', '')
             cotizacion.save()
             messages.success(request, 'Ficha de la cotización actualizada.')
@@ -388,6 +417,7 @@ def cotizacion_detail(request, cotizacion_id):
         'tipos': CotizacionPlanos.TIPO_CHOICES,
         'param_integral': pricing.param('DESCUENTO_INTEGRAL', '10'),
         'param_iva': pricing.param('IVA_PLANOS', '15.00'),
+        'param_sin_plano': pricing.param('RECARGO_SIN_PLANO', '15'),
         'plantilla_cards': plantilla_cards,
         'plantilla_recomendada': recom,
     })
@@ -445,6 +475,12 @@ def _generar_proforma(request, cotizacion):
         'Memoria descriptiva y memoria de cálculo del proyecto.',
         'Firmas del profesional responsable.',
     ])
+    if not cotizacion.plano_arquitectonico:
+        scope = '\n'.join([
+            scope,
+            'No se dispone de plano arquitectónico: el alcance incluye el replanteo '
+            'y levantamiento arquitectónico en sitio.',
+        ])
     terms = '\n'.join([
         'El valor considera la elaboración de planos, memorias y firmas indicadas en el alcance.',
         'Se incluyen hasta dos (2) rondas de observaciones; revisiones adicionales se cotizarán por separado.',

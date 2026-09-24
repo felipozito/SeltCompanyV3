@@ -52,6 +52,18 @@ def descuento_factor():
     return (Decimal('100') - descuento_pct()) / Decimal('100')
 
 
+def sa_replanteo_factor(cotizacion):
+    """Factor por relevamiento arquitectónico (sin plano del arquitecto).
+
+    Sin plano base, el levantamiento en sitio debe replantear la arquitectura:
+    se aplica un recargo (RECARGO_SIN_PLANO, % ) sobre los entregables LEV.
+    """
+    if getattr(cotizacion, 'plano_arquitectonico', True):
+        return Decimal('1.00')
+    pct = param('RECARGO_SIN_PLANO', '15')
+    return (Decimal('100') + pct) / Decimal('100')
+
+
 def cantidad_sugerida(entregable, cotizacion):
     """Cantidad que se autoasigna al añadir un entregable (dependiente de factores)."""
     if entregable.unidad == 'M2':
@@ -64,11 +76,14 @@ def cantidad_sugerida(entregable, cotizacion):
 
 
 def precio_unitario(entregable, cotizacion):
-    """Precio unitario congelable: base × recargo (× descuento integral si aplica)."""
+    """Precio unitario congelable: base × recargo (× descuento integral si aplica)
+    (× recargo por relevamiento sin plano arquitectónico en entregables LEV)."""
     base = _dec(entregable.precio_base, '0')
     unit = _q2(base * recargo_tipo(cotizacion.tipo_proyecto))
     if cotizacion.integral and entregable.es_electronico:
         unit = _q2(unit * descuento_factor())
+    if str(entregable.categoria or '').upper() == 'LEV':
+        unit = _q2(unit * sa_replanteo_factor(cotizacion))
     return unit
 
 

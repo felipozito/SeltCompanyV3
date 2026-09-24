@@ -201,6 +201,9 @@
           {% if resumen.desc_importe %}
           <div class="flex justify-between text-violet-700"><dt>Descuento integral (electrónico)</dt><dd class="tabular-nums">- $ {{ resumen.desc_importe|floatformat:2 }}</dd></div>
           {% endif %}
+          {% if resumen.replan_importe %}
+          <div class="flex justify-between text-amber-700"><dt>Replanteo sin plano arquitectónico (+{{ param_sin_plano|floatformat:0 }} % en levantamientos)</dt><dd class="tabular-nums">+ $ {{ resumen.replan_importe|floatformat:2 }}</dd></div>
+          {% endif %}
           <div class="flex justify-between"><dt class="font-semibold text-slate-700">Subtotal</dt><dd class="font-semibold tabular-nums">$ {{ resumen.subtotal|floatformat:2 }}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">IVA {{ param_iva|floatformat:0 }}%</dt><dd class="tabular-nums">$ {{ resumen.iva|floatformat:2 }}</dd></div>
           <div class="flex justify-between border-t border-slate-200 pt-2"><dt class="text-lg font-black text-primary">TOTAL</dt><dd class="text-lg font-black tabular-nums text-primary">$ {{ resumen.total|floatformat:2 }}</dd></div>
@@ -255,6 +258,13 @@
           <label class="flex items-center gap-2 text-sm text-slate-700">
             <input name="integral" type="checkbox" {% if cp.integral %}checked{% endif %} class="h-4 w-4 rounded border-slate-300 text-primary">
             Proyecto integral (descuento del {{ param_integral|floatformat:0 }} % a electrónico)
+          </label>
+          <label class="flex items-center gap-2 text-sm text-slate-700">
+            <input name="plano_arquitectonico" type="checkbox" {% if cp.plano_arquitectonico %}checked{% endif %} class="h-4 w-4 rounded border-slate-300 text-primary">
+            <span>
+              <span class="block">Dispone de plano arquitectónico</span>
+              <span class="block text-[11px] text-slate-400">Sin plano: +{{ param_sin_plano|floatformat:0 }} % en levantamientos (replanteo desde cero).</span>
+            </span>
           </label>
           <label class="block">
             <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Notas</span>

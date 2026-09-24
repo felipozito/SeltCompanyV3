@@ -11,3 +11,8 @@ media/
 .env
 venv
 
+# Artefactos locales
+.DS_Store
+NormativaEEQ.pdf
+*.pdf
+

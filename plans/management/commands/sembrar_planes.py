@@ -59,6 +59,7 @@ PARAMETROS = [
     ('RECARGO_COM', 'Recargo por tipo de proyecto: comercial', '10.00', '%'),
     ('RECARGO_IND', 'Recargo por tipo de proyecto: industrial', '30.00', '%'),
     ('DESCUENTO_INTEGRAL', 'Descuento a entregables electrónicos en proyecto integral', '10.00', '%'),
+    ('RECARGO_SIN_PLANO', 'Recargo por relevamiento sin plano arquitectónico (aplicado a levantamientos)', '15.00', '%'),
     ('IVA_PLANOS', 'Impuesto al valor agregado aplicado en la propuesta', '15.00', '%'),
     ('PORCENTAJE_ANTICIPO', 'Anticipo solicitado para iniciar la elaboración', '60.00', '%'),
     ('VIGENCIA_DIAS', 'Duración de la oferta comercial', '15.00', 'días'),

@@ -247,7 +247,6 @@ def carga_create(request):
         fp = request.POST.get('factor_potencia', '0.90')
         voltaje = request.POST.get('voltaje', '220 V')
         fases = request.POST.get('fases', '1F')
-        tipo = request.POST.get('tipo_carga', 'RES')
         nec = request.POST.get('metodo_calculo', '')
         obs = request.POST.get('obs_tecnica', '')
 
@@ -416,7 +415,6 @@ def _tablero(estado, estudio):
     - Principal: protege el alimentador al 125 % de la corriente de SERVICIO
       (demanda DMU, NEC 215.3).
     """
-    srv = estudio.servicio
     circuitos, kva_con = [], Decimal('0')
     v_f = estudio.voltaje_fase
     factor_ramal = _param('FACTOR_PROTECCION_RAMAL', '125') / Decimal('100')
@@ -1075,9 +1073,7 @@ def estudio_export_excel(request, estudio_id):
     negrita = Font(bold=True)
     titulo = Font(bold=True, size=14)
     sub = Font(bold=True, size=11)
-    gris = Font(color='666666')
     relleno = PatternFill('solid', fgColor='EFEFEF')
-    relleno_tot = PatternFill('solid', fgColor='DDDDDD')
     borde = Border(*[Side(style='thin', color='BBBBBB')] * 4)
     ce = Alignment(horizontal='center')
     der = Alignment(horizontal='right')
@@ -1124,7 +1120,6 @@ def estudio_export_excel(request, estudio_id):
             ws.cell(r, 2).alignment = Alignment()
             r += 1
         tot = _totales_planilla(filas, estudio.servicio, estudio.voltaje_fase, fp)
-        totales = [('TOTALES', r), ('', r + 1)]
         ws.cell(r, 1, 'TOTALES').font = negrita
         ws.cell(r, 6, round(float(tot['cir_w']), 1)).font = negrita
         ws.cell(r, 8, round(float(tot['dmu_w']), 1)).font = negrita

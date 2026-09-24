@@ -106,6 +106,8 @@ class CotizacionPlanos(models.Model):
     n_circuitos = models.PositiveIntegerField('Nº circuitos', default=1)
     integral = models.BooleanField('Proyecto integral (eléctrico + electrónico)',
                                    default=False)
+    plano_arquitectonico = models.BooleanField(
+        'Dispone de plano arquitectónico (ej. CAD del arquitecto)', default=True)
     notas = models.TextField(blank=True)
     proforma = models.ForeignKey('crm.Proforma', on_delete=models.SET_NULL,
                                  null=True, blank=True,
@@ -126,12 +128,6 @@ class CotizacionPlanos(models.Model):
     def subtotal(self):
         return sum((r.total for r in self.rubros.all()), Decimal('0.00'))
 
-    @property
-    def subtotal_elec(self):
-        """Suma de rubros electrónicos (aplica descuento por proyecto integral)."""
-        return sum((r.total for r in self.rubros.all() if r.es_electronico),
-                   Decimal('0.00'))
-
     @staticmethod
     def _param(clave, fallback):
         row = PlanParametro.objects.filter(clave=clave).first()
@@ -139,19 +135,6 @@ class CotizacionPlanos(models.Model):
             return Decimal(str(row.valor)) if row else Decimal(str(fallback))
         except Exception:
             return Decimal(str(fallback))
-
-    @property
-    def desc_importe(self):
-        """Descuento teórico del bloque electrónico (informativo). Los precios
-        unitarios ya lo incorporan; no se resta del gravado."""
-        if self.integral and self.subtotal_elec:
-            factor = self._param('DESCUENTO_INTEGRAL', '0.90')
-            return (self.subtotal_elec * (Decimal('1') - factor)).quantize(Decimal('0.01'))
-        return Decimal('0.00')
-
-    @property
-    def subtotal_sin_desc(self):
-        return (self.subtotal + self.desc_importe).quantize(Decimal('0.01'))
 
     @property
     def gravado(self):
@@ -191,7 +174,3 @@ class RubroCotizacion(models.Model):
     @property
     def total(self):
         return (self.cantidad or Decimal('0.00')) * (self.precio_unitario or Decimal('0.00'))
-
-    @property
-    def es_electronico(self):
-        return self.entregable.es_electronico
