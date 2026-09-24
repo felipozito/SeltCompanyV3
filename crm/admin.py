@@ -75,7 +75,8 @@ class CargaNormativaAdmin(admin.ModelAdmin):
 # ============================================================================
 # ESTUDIOS DE CARGA + BASE NORMATIVA — admin
 # ============================================================================
-from .models import EstudioCarga, ItemEstudio, ParametroNorma, PerfilHorario
+from .models import (DMDResidencial, EstudioCarga, FactorDiversidad, ItemEstudio,
+                     ParametroNorma, PerfilHorario)
 
 
 class ItemEstudioInline(admin.TabularInline):
@@ -86,10 +87,24 @@ class ItemEstudioInline(admin.TabularInline):
 
 @admin.register(EstudioCarga)
 class EstudioCargaAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'cliente', 'servicio', 'voltaje_linea', 'creado')
-    list_filter = ('servicio',)
+    list_display = ('nombre', 'cliente', 'tipo_estudio', 'servicio', 'voltaje_fase', 'creado')
+    list_filter = ('servicio', 'tipo_estudio', 'estrato', 'zona_urbano_rural')
     search_fields = ('nombre', 'cliente__name')
     inlines = [ItemEstudioInline]
+
+
+@admin.register(DMDResidencial)
+class DMDResidencialAdmin(admin.ModelAdmin):
+    list_display = ('estrato', 'numero_usuarios', 'dmd_kw')
+    list_filter = ('estrato',)
+    search_fields = ('estrato',)
+    list_editable = ('dmd_kw',)
+
+
+@admin.register(FactorDiversidad)
+class FactorDiversidadAdmin(admin.ModelAdmin):
+    list_display = ('numero_usuarios', 'factor')
+    list_editable = ('factor',)
 
 
 @admin.register(ItemEstudio)

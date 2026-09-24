@@ -2,6 +2,9 @@
 {% block title %}{{ estudio.nombre }} · Estudio de Carga · Selt CRM{% endblock %}
 
 {% block content %}
+<div id="recalc-toast" class="pointer-events-none fixed left-1/2 top-4 z-50 hidden -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-xs font-black text-white shadow-lg">
+  Recalculando…
+</div>
 <div class="mx-auto max-w-6xl space-y-6">
 
   <div class="flex flex-wrap items-end justify-between gap-4">
@@ -11,11 +14,18 @@
       </p>
       <h1 class="mt-1 text-3xl font-black text-primary">{{ estudio.nombre }}</h1>
       <p class="mt-1 text-sm text-slate-500">
-        Servicio {{ estudio.get_servicio_display }} · {{ estudio.voltaje_linea }} V ·
+        Servicio {{ estudio.get_servicio_display }} · {{ estudio.voltaje_linea }} V línea ·
+        fase–neutro {{ estudio.voltaje_fase }} V ·
         creado por {{ estudio.creado_por.username|default:'—' }} el {{ estudio.creado|date:'d/m/Y H:i' }}
       </p>
+      <!-- Distribución de fases según sistema -->
+      <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+        <span class="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">Fases disponibles: <span class="font-mono text-accent">{{ fases_disp.fases|join:' · ' }}</span></span>
+        <span class="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">Distribución: <span class="font-mono text-accent">{{ fases_disp.distribucion }}</span></span>
+      </div>
     </div>
     <div class="flex items-center gap-3">
+      <a href="{% url 'crm:estudio_export_excel' estudio.id %}" class="rounded-xl border border-emerald-300 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-500/20">⬇ Exportar Excel (EEQ)</a>
       <a href="{% url 'crm:estudio_print' estudio.id %}" target="_blank" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">🖨 Imprimir</a>
       <a href="{% url 'crm:estudios' %}" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">← Volver</a>
       <form method="post" action="{% url 'crm:estudio_delete' estudio.id %}"
@@ -29,6 +39,131 @@
     </div>
   </div>
 
+
+  <!-- FICHA TÉCNICA / GUARDAR (datos del estudio EEQ A-11) -->
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <h3 class="text-sm font-black uppercase tracking-widest text-slate-500">Ficha del estudio</h3>
+    <form method="post" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="guardar_ficha">
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nombre</span>
+        <input name="nombre" value="{{ estudio.nombre }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Servicio</span>
+        <select name="servicio" id="id-servicio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="1F" {% if estudio.servicio == '1F' %}selected{% endif %}>Monofásico</option>
+          <option value="2F" {% if estudio.servicio == '2F' %}selected{% endif %}>Bifásico</option>
+          <option value="3F" {% if estudio.servicio == '3F' %}selected{% endif %}>Trifásico</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Voltaje fase–neutro (V)</span>
+        <input name="voltaje" id="voltaje-ficha" value="{{ estudio.voltaje_fase }}" list="datalist-voltajes"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+        <span class="mt-1 block text-[10px] text-slate-400">
+          Recomendado: <span class="font-mono font-bold text-slate-600" id="rec-voltaje">120 V</span> fase–neutro
+          → línea <span class="font-mono font-bold text-slate-600" id="rec-linea">120 V</span>
+        </span>
+        <datalist id="datalist-voltajes">
+          <option value="110"><option value="120"><option value="127"><option value="220">
+        </datalist>
+      </label>
+      <label class="block sm:col-span-2">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Localización</span>
+        <input name="localizacion" value="{{ estudio.localizacion|default:'' }}"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de estudio (EEQ A-11.02)</span>
+        <select name="tipo_estudio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          {% for cod, nom in tipo_estudio_choices %}<option value="{{ cod }}" {% if estudio.tipo_estudio == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Estrato de consumo (RES)</span>
+        <select name="estrato" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="">— Sin estrato (justificativo) —</option>
+          {% for cod, nom in estrato_choices %}<option value="{{ cod }}" {% if estudio.estrato == cod %}selected{% endif %}>{{ nom }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Zona urbano / rural</span>
+        <select name="zona_urbano_rural" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="URB" {% if estudio.zona_urbano_rural == 'URB' %}selected{% endif %}>Urbana</option>
+          <option value="RUR" {% if estudio.zona_urbano_rural == 'RUR' %}selected{% endif %}>Rural</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº usuarios proyectados (período diseño)</span>
+        <input name="usuarios_proyectados" value="{{ estudio.usuarios_proyectados }}" type="number" min="0"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">DAP · Alumbrado público (kW)</span>
+        <input name="dap_kw" value="{{ estudio.dap_kw|floatformat:3 }}" type="number" step="0.001" min="0"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">N abonados comerciales (N)</span>
+        <input name="n_abonados" value="{{ estudio.n_abonados_comercial }}" type="number" min="1"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FD diversidad (A-11-D1) — vacío = auto</span>
+        <input name="fd_diversidad" value="{{ estudio.fd_factor_diversidad|default:'' }}" type="number" step="0.01" min="1"
+               placeholder="automático"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
+        <input type="checkbox" name="es_camara_transformacion" {% if estudio.es_camara_transformacion %}checked{% endif %} class="h-4 w-4 accent-slate-800">
+        Cámara de transformación (DPT 1% · Ec. 2)
+      </label>
+      <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
+        <input type="checkbox" name="subestacion_taps" {% if estudio.subestacion_taps %}checked{% endif %} class="h-4 w-4 accent-slate-800">
+        Subestación con derivaciones (taps) → caída +0,5%
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº usuarios</span>
+        <input name="numero_usuarios" value="{{ estudio.numero_usuarios }}" type="number" min="1"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Fecha</span>
+        <input name="fecha" type="date" value="{{ estudio.fecha_estudio|date:'Y-m-d' }}"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Ingeniero responsable</span>
+        <input name="ingeniero" value="{{ estudio.ingeniero_responsable|default:'' }}" placeholder="ING. ..."
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Registro LP</span>
+        <input name="registro_lp" value="{{ estudio.registro_lp|default:'' }}" placeholder="LP: 1034-2021-..."
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nº expediente EEQ</span>
+        <input name="expediente_eeq" value="{{ estudio.expediente_eeq|default:'' }}" placeholder="EEQ-2022-I.2163"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Material conductor</span>
+        <select name="conductor_material" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          {% for v, n in mat_options %}<option value="{{ v }}" {% if estudio.conductor_material == v %}selected{% endif %}>{{ n }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Longitud línea (m)</span>
+        <input name="longitud" value="{{ estudio.longitud_linea|default:'' }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <button type="submit" class="btn-cta px-4 py-2.5 text-sm sm:col-span-2 lg:col-span-1">
+        Guardar ficha
+      </button>
+    </form>
+  </section>
   <!-- INVENTARIO DE CARGAS -->
   <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <div class="flex flex-wrap items-center justify-between gap-3">
@@ -36,50 +171,84 @@
       <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ estado.filas|length }} cargas</span>
     </div>
 
-    <form method="post" class="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-6">
+    <!-- ZONAS: gestión de áreas/tableros EEQ -->
+    <div class="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-3">
+      <span class="text-xs font-black uppercase tracking-wider text-slate-500">Zonas (cada una = planilla de demanda):</span>
+      {% for z in zonas %}
+      <span class="inline-flex items-center gap-1 rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">
+        {{ z.nombre }}
+        <form method="post" class="inline">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="eliminar_zona">
+          <input type="hidden" name="zona_id" value="{{ z.id }}">
+          <button type="submit" data-confirm="¿Eliminar la zona «{{ z.nombre }}»? Las cargas pasan a GENERAL."
+                  class="text-red-500 hover:text-red-700" title="Eliminar zona">✕</button>
+        </form>
+      </span>
+      {% endfor %}
+      <form method="post" class="inline-flex items-center gap-1.5">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="agregar_zona">
+        <input name="zona_nombre" placeholder="Nueva zona (ej.: COCINA, BAR, RECEPCIÓN)"
+               class="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900">
+        <button type="submit" class="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-black text-white hover:bg-slate-700">+ Zona</button>
+      </form>
+    </div>
+
+    <form method="post" class="mt-3 flex flex-wrap items-end gap-x-2 gap-y-2 rounded-xl bg-slate-100 p-3">
       {% csrf_token %}
       <input type="hidden" name="accion" value="agregar">
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Equipo (catálogo)</span>
-        <select name="carga" id="carga-select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900" required>
+      <label class="block w-32">
+        <span class="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Zona</span>
+        <select name="zona_id" class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900">
+          <option value="0" selected>GENERAL</option>
+          {% for z in zonas %}<option value="{{ z.id }}">{{ z.nombre }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="block min-w-[190px] flex-1">
+        <span class="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Carga (catálogo)</span>
+        <select name="carga" id="carga-select" class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900" required>
           <option value="">— Selecciona —</option>
           {% for c in cargas %}
           <option value="{{ c.id }}">{{ c.codigo }} · {{ c.equipo }}</option>
           {% endfor %}
         </select>
       </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Cantidad</span>
+      <label class="block w-16">
+        <span class="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Qty</span>
         <input name="cantidad" value="1" type="number" min="1"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
+               class="w-full rounded-lg border border-slate-300 bg-white px-1.5 py-1.5 text-right font-mono text-xs text-slate-900">
       </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">kW</span>
-        <input name="kw" id="carga-kw" value="" placeholder="se llena al elegir"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
+      <label class="block w-20">
+        <span class="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Pn (kW)</span>
+        <input name="kw" id="carga-kw" value="" placeholder="auto"
+               class="w-full rounded-lg border border-slate-300 bg-white px-1.5 py-1.5 text-right font-mono text-xs text-slate-900">
       </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FD %</span>
-        <input name="fd" id="carga-fd" value="" placeholder="se llena al elegir"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
+      <label class="block w-16">
+        <span class="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500" title="Factor de Funcionamiento Unitario (%)">FFUn %</span>
+        <input name="ff" id="carga-ff" value="100"
+               class="w-full rounded-lg border border-slate-300 bg-white px-1.5 py-1.5 text-right font-mono text-xs text-slate-900">
       </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FP</span>
-        <input name="fp" id="carga-fp" value="" placeholder="se llena al elegir"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
+      <label class="block w-16">
+        <span class="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500" title="Factor de Servicio / simultaneidad (%)">FSn %</span>
+        <input name="fs" id="carga-fs" value="" placeholder="auto"
+               class="w-full rounded-lg border border-slate-300 bg-white px-1.5 py-1.5 text-right font-mono text-xs text-slate-900">
       </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Fase destino</span>
-        <select name="fase" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+      <label class="block w-16">
+        <span class="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">FP</span>
+        <input name="fp" id="carga-fp" value="" placeholder="auto"
+               class="w-full rounded-lg border border-slate-300 bg-white px-1.5 py-1.5 text-right font-mono text-xs text-slate-900">
+      </label>
+      <label class="block w-20">
+        <span class="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Fase destino</span>
+        <select name="fase" class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900">
           <option value="" selected>Auto (balance)</option>
-          <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+          {% for op in fases_disp.fases %}<option value="{{ op }}">{{ op }}</option>{% endfor %}
         </select>
       </label>
-      <button type="submit" class="btn-cta px-4 py-2 text-sm sm:col-span-2 lg:col-span-1">
-        + Agregar
-      </button>
-      <p id="carga-preview" class="sm:col-span-2 lg:col-span-5 text-xs text-slate-500">
-        Selecciona una carga del catálogo para previsualizar sus valores normativos (kW/FD/FP/fases) — se rellenan al instante, sin AJAX.
+      <button type="submit" class="btn-cta mb-px px-4 py-1.5 text-xs">+ Agregar</button>
+      <p id="carga-preview" class="w-full pt-0.5 text-[11px] text-slate-500">
+        Selecciona una carga del catálogo para previsualizar y rellenar Pn/FFUn/FSn/FP automáticamente.
       </p>
     </form>
 
@@ -89,12 +258,14 @@
           <tr>
             <th class="px-3 py-2.5 font-black">Código</th>
             <th class="px-3 py-2.5 font-black">Equipo</th>
+            <th class="px-3 py-2.5 font-black">Zona</th>
             <th class="px-3 py-2.5 text-right font-black">Cantidad</th>
-            <th class="px-3 py-2.5 text-right font-black">kW</th>
-            <th class="px-3 py-2.5 text-right font-black">FD</th>
+            <th class="px-3 py-2.5 text-right font-black">Pn (W)</th>
+            <th class="px-3 py-2.5 text-right font-black" title="Factor de Funcionamiento Unitario (%)">FFUn</th>
+            <th class="px-3 py-2.5 text-right font-black" title="Factor de Servicio / simultaneidad (%)">FSn</th>
             <th class="px-3 py-2.5 text-right font-black">FP</th>
-            <th class="px-3 py-2.5 text-right font-black">kW dem.</th>
-            <th class="px-3 py-2.5 text-right font-black">kVA</th>
+            <th class="px-3 py-2.5 text-right font-black">CIR (W)</th>
+            <th class="px-3 py-2.5 text-right font-black">DMU (W)</th>
             <th class="px-3 py-2.5 text-right font-black">Fase</th>
             <th class="px-3 py-2.5"></th>
           </tr>
@@ -102,21 +273,28 @@
         <tbody class="divide-y divide-slate-100">
           {% for f in estado.filas %}
           <tr class="hover:bg-slate-50/70">
-            <form method="post">
+            <form method="post" data-fila>
               {% csrf_token %}
               <input type="hidden" name="item" value="{{ f.id }}">
               <td class="px-3 py-2.5 font-mono text-xs text-accent">{{ f.codigo }}<div class="text-[10px] text-slate-400">{{ f.categoria }}</div></td>
-              <td class="px-3 py-2.5 font-bold text-slate-800">{{ f.equipo }}</td>
-              <td class="px-3 py-2.5"><input name="cantidad" value="{{ f.cantidad }}" type="number" min="1" class="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right font-mono text-sm text-slate-900"></td>
+              <td class="px-3 py-2.5 font-bold text-slate-800">{{ f.equipo }}<div class="text-[10px] font-normal text-slate-400">{{ f.zona }}</div></td>
+              <td class="px-3 py-2.5">
+                <select name="zona_id" class="rounded-lg border border-slate-200 bg-white px-1 py-1 text-xs text-slate-900">
+                  <option value="0" {% if not f.zona_id %}selected{% endif %}>GENERAL</option>
+                  {% for z in zonas %}<option value="{{ z.id }}" {% if f.zona_id == z.id %}selected{% endif %}>{{ z.nombre }}</option>{% endfor %}
+                </select>
+              </td>
+              <td class="px-3 py-2.5"><input name="cantidad" value="{{ f.cantidad }}" type="number" min="1" class="w-14 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right font-mono text-sm text-slate-900"></td>
               <td class="px-3 py-2.5"><input name="kw" value="{{ f.kw }}" step="0.001" class="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right font-mono text-sm text-slate-900"></td>
-              <td class="px-3 py-2.5"><input name="fd" value="{{ f.fd }}" step="0.01" class="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right font-mono text-sm text-slate-900"></td>
+              <td class="px-3 py-2.5"><input name="ff" value="{{ f.ff }}" step="0.01" class="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right font-mono text-sm text-slate-900"></td>
+              <td class="px-3 py-2.5"><input name="fs" value="{{ f.fs }}" step="0.01" class="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right font-mono text-sm text-slate-900"></td>
               <td class="px-3 py-2.5"><input name="fp" value="{{ f.fp }}" step="0.001" class="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right font-mono text-sm text-slate-900"></td>
-              <td class="px-3 py-2.5 font-mono text-sm font-black tabular-nums text-slate-800">{{ f.dem|floatformat:2 }}</td>
-              <td class="px-3 py-2.5 font-mono text-sm tabular-nums text-slate-600">{{ f.kva|floatformat:2 }}</td>
+              <td class="px-3 py-2.5 font-mono text-xs tabular-nums text-slate-600">{{ f.cir_w|floatformat:0 }}</td>
+              <td class="px-3 py-2.5 font-mono text-sm font-black tabular-nums text-slate-800">{{ f.dmu_w|floatformat:1 }}</td>
               <td class="px-3 py-2.5">
                 <select name="fase" class="rounded-lg border border-slate-200 bg-white px-1 py-1 font-mono text-xs text-slate-900">
                   <option value="" {% if f.fase_auto %}selected{% endif %}>Auto</option>
-                  {% for op in 'ABC' %}<option value="{{ op }}" {% if f.fase == op %}selected{% endif %}>{{ op }}</option>{% endfor %}
+                  {% for op in fases_disp.fases %}<option value="{{ op }}" {% if f.fase == op %}selected{% endif %}>{{ op }}</option>{% endfor %}
                 </select>
               </td>
               <td class="px-3 py-2.5">
@@ -135,30 +313,270 @@
             </form>
           </tr>
           {% empty %}
-          <tr><td colspan="10" class="px-3 py-10 text-center text-sm text-slate-500">Vacío — agrega cargas del catálogo arriba. Sin AJAX: se recarga y calcula en cada envío.</td></tr>
+          <tr><td colspan="12" class="px-3 py-10 text-center text-sm text-slate-500">Vacío — agrega cargas del catálogo arriba. Sin AJAX: se recarga y calcula en cada envío.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </section>
 
+  <!-- NUEVO ÍTEM LIBRE (se guarda también en el catálogo) -->
+  <section class="rounded-2xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
+    <h3 class="text-sm font-black uppercase tracking-widest text-slate-500">Nuevo ítem libre · se agrega al catálogo normativo</h3>
+    <p class="mt-1 text-xs text-slate-500">Define una carga desde cero; al guardarla se audita (HistorialCarga) y queda disponible para otros estudios.</p>
+    <form method="post" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="nuevo_item">
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Categoría</span>
+        <select name="categoria" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          {% for cod, nom in cat_choices.items %}<option value="{{ cod }}">{{ nom }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Equipo *</span>
+        <input name="equipo" required placeholder="Ej.: Aire acondicionado 12000 BTU"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Potencia</span>
+        <div class="flex gap-2">
+          <input name="potencia" value="0" type="number" step="0.01"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
+          <select name="unidad" class="rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900">
+            <option>W</option><option>kW</option><option>VA</option><option>kVA</option><option>HP</option>
+          </select>
+        </div>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Fases (carga)</span>
+        <select name="fases" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="1F">Monofásica</option>
+          <option value="2F">Bifásica</option>
+          <option value="3F">Trifásica</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Cantidad</span>
+        <input name="cantidad" value="1" type="number" min="1"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600" title="Factor de Funcionamiento Unitario (%)">FFUn %</span>
+        <input name="ff" value="100" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600" title="Factor de Servicio / simultaneidad (%)">FSn %</span>
+        <input name="fs" value="100" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FP</span>
+        <input name="fp" value="0.90" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Código (opcional)</span>
+        <input name="codigo" placeholder="ILU-LIB-001 (auto)"
+               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+      </label>
+      <button type="submit" class="btn-cta px-4 py-2.5 text-sm sm:col-span-2 lg:col-span-1">
+        Crear + agregar al catálogo
+      </button>
+    </form>
+  </section>
+
+
   <!-- MOTOR MATEMÁTICO -->
-  <section class="grid gap-6 lg:grid-cols-3">
+  <section class="grid gap-6 lg:grid-cols-4">
     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p class="text-xs font-black uppercase tracking-widest text-slate-500">1 · Carga instalada</p>
-      <p class="mt-2 font-mono text-3xl font-black tabular-nums text-slate-900">{{ estado.p_inst|floatformat:2 }} <span class="text-sm text-slate-400">kW</span></p>
-      <p class="mt-1 text-xs text-slate-500">Σ P_instalada</p>
+      <p class="text-xs font-black uppercase tracking-widest text-slate-500">CIR · Carga Instalada Resultante</p>
+      <p class="mt-2 font-mono text-3xl font-black tabular-nums text-slate-900">{{ estado.cir_kw|floatformat:2 }} <span class="text-sm text-slate-400">kW</span></p>
+      <p class="mt-1 text-xs text-slate-500">Σ Pn × Cant × FFUn</p>
     </div>
     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p class="text-xs font-black uppercase tracking-widest text-slate-500">2 · Demanda máxima</p>
+      <p class="text-xs font-black uppercase tracking-widest text-slate-500">DMU · Demanda Máxima Unitaria</p>
       <p class="mt-2 font-mono text-3xl font-black tabular-nums text-accent">{{ estado.p_dem|floatformat:2 }} <span class="text-sm text-slate-400">kW</span></p>
-      <p class="mt-1 text-xs text-slate-500">P × Fd (demanda)</p>
+      <p class="mt-1 text-xs text-slate-500">Σ CIR × FSn · <b>FDM {{ estado.fdm|floatformat:3 }}</b></p>
     </div>
     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p class="text-xs font-black uppercase tracking-widest text-slate-500">3 · kVA del proyecto</p>
-      <p class="mt-2 font-mono text-3xl font-black tabular-nums text-slate-900">{{ estado.kva|floatformat:2 }} <span class="text-sm text-slate-400">kVA</span></p>
-      <p class="mt-1 text-xs text-slate-500">demanda ÷ FP ({{ param_fp }})</p>
+      <p class="text-xs font-black uppercase tracking-widest text-slate-500">DMU (kVA) · Demanda Requerida</p>
+      <p class="mt-2 font-mono text-3xl font-black tabular-nums text-slate-900">{{ estado.dmu_kva|floatformat:1 }} <span class="text-sm text-slate-400">kVA</span></p>
+      <p class="mt-1 text-xs text-slate-500">DMU(kW) ÷ FP ({{ param_fp }})</p>
     </div>
+    <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
+      <p class="text-xs font-black uppercase tracking-widest text-emerald-700">kVA de Servicio (EEQ)</p>
+      <p class="mt-2 font-mono text-3xl font-black tabular-nums text-emerald-700">{{ estado.kva_servicio|floatformat:0 }} <span class="text-sm text-emerald-500">kVA</span></p>
+      <p class="mt-1 text-xs text-emerald-600">Demanda redondeada al alza para la acometida</p>
+    </div>
+  </section>
+
+  <!-- DEMANDA DE DISEÑO EEQ A-11.04 -->
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="text-lg font-black text-slate-800">Demanda de Diseño · EEQ Sección A-11.04</h2>
+      <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+        {{ estudio.get_tipo_estudio_display }} · {{ estado.cdv.zona }} ·
+        {% if estado.cdv.taps %}con{% else %}sin{% endif %} taps
+      </span>
+    </div>
+
+    {% if estado.tipo_estudio == 'RES' %}
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div class="rounded-xl bg-slate-50 p-4">
+        <p class="text-xs text-slate-500">DMD · Tabla A-11.03_1</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-slate-900">{{ estado.dmd_kw|floatformat:3 }} <span class="text-sm text-slate-400">kW</span></p>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-4">
+        <p class="text-xs text-slate-500">DAP · Alumbrado público</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-slate-900">{{ estado.dap_kw|floatformat:3 }} <span class="text-sm text-slate-400">kW</span></p>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-4">
+        <p class="text-xs text-slate-500">DPT · Pérdidas técnicas</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-slate-900">{{ estado.dpt_kw|floatformat:3 }} <span class="text-sm text-slate-400">kW</span></p>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-4">
+        <p class="text-xs text-slate-500">FP (Ec. 1/2)</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-slate-900">{{ estado.fp_dd|floatformat:2 }}</p>
+      </div>
+      <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
+        <p class="text-xs font-black uppercase tracking-widest text-emerald-700">DD = (DMD+DAP+DPT)/FP</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-emerald-700">{{ estado.dd_kva|floatformat:2 }} <span class="text-sm text-emerald-500">kVA</span></p>
+      </div>
+    </div>
+    {% else %}
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div class="rounded-xl bg-slate-50 p-4">
+        <p class="text-xs text-slate-500">DMU (kW)</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-slate-900">{{ estado.p_dem|floatformat:2 }}</p>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-4">
+        <p class="text-xs text-slate-500">DMU (kVA)</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-slate-900">{{ estado.dmu_kva|floatformat:2 }}</p>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-4">
+        <p class="text-xs text-slate-500">N · Abonados que inciden</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-slate-900">{{ estado.n_abonados }}</p>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-4">
+        <p class="text-xs text-slate-500">FD · Diversidad (A-11-D1)</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-slate-900">{{ estado.fd|floatformat:3 }}</p>
+        <p class="text-[11px] text-slate-400">{% if estado.fd_auto %}automático{% else %}manual (ficha){% endif %}</p>
+      </div>
+      <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
+        <p class="text-xs font-black uppercase tracking-widest text-emerald-700">DD = (DMU×N)/FD</p>
+        <p class="mt-1 font-mono text-2xl font-black tabular-nums text-emerald-700">{{ estado.dd_kva|floatformat:2 }} <span class="text-sm text-emerald-500">kVA</span></p>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-3 grid gap-2 sm:grid-cols-2">
+      <p class="rounded-lg bg-slate-50 px-3 py-1.5 text-xs text-slate-600">{{ estado.dd_detalle }}</p>
+      <p class="rounded-lg bg-slate-50 px-3 py-1.5 text-xs text-slate-600">
+        Caída admisible EEP: primaria {{ estado.cdv.primaria }}% + secundaria {{ estado.cdv.secundaria }}%
+        = <b>{{ estado.cdv.total }}%</b> (A-11.07) · Período de diseño: primaria 15 a. · CT/red secundaria 10 a. (A-11.06)
+      </p>
+    </div>
+
+    <!-- CHECKLIST DE CUMPLIMIENTO -->
+    <div class="mt-4 rounded-xl border border-slate-200 p-4">
+      <h3 class="text-xs font-black uppercase tracking-widest text-slate-500">Checklist de cumplimiento normativo (cierre del estudio)</h3>
+      <ul class="mt-2 grid gap-2 sm:grid-cols-2">
+        {% for c in estado.checks %}
+        <li class="flex items-start gap-2 rounded-lg px-3 py-2 text-xs {% if c.ok %}bg-emerald-50{% elif c.ok is None %}bg-slate-50{% else %}bg-red-50{% endif %}">
+          {% if c.ok %}<span class="mt-px font-black text-emerald-600">✔</span>{% elif c.ok is None %}<span class="mt-px font-black text-slate-400">○</span>{% else %}<span class="mt-px font-black text-red-500">✘</span>{% endif %}
+          <span class="text-slate-700"><b>{{ c.label }}</b>{% if c.detail %}<br><span class="text-slate-500">{{ c.detail }}</span>{% endif %}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <!-- PLANILLAS EEQ POR ZONA + RESUMEN -->
+  {% if estado.zonas %}
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="text-lg font-black text-slate-800">Demandas unitarias de diseño (planillas EEQ)</h2>
+      <a href="{% url 'crm:estudio_export_excel' estudio.id %}" class="rounded-xl border border-emerald-300 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-500/20">⬇ Exportar .xlsx</a>
+    </div>
+
+    {% for z in estado.zonas %}
+    <div class="mt-5">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-black uppercase tracking-widest text-slate-600">{{ z.nombre }}</h3>
+        <span class="font-mono text-xs text-slate-500">DMU {{ z.dmu_kva|floatformat:1 }} kVA · FDM {{ z.fdm|floatformat:3 }}</span>
+      </div>
+      <div class="mt-2 overflow-x-auto rounded-xl border border-slate-200">
+        <table class="w-full min-w-[760px] text-left text-xs">
+          <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
+            <tr>
+              <th class="px-3 py-2 font-black">Renglón</th>
+              <th class="px-3 py-2 font-black">Aparatos eléctricos y alumbrado</th>
+              <th class="px-3 py-2 text-right font-black">Cant</th>
+              <th class="px-3 py-2 text-right font-black">Pn (W)</th>
+              <th class="px-3 py-2 text-right font-black" title="Factor de Funcionamiento Unitario">FFUn %</th>
+              <th class="px-3 py-2 text-right font-black">CIR (W)</th>
+              <th class="px-3 py-2 text-right font-black" title="Factor de Servicio / simultaneidad">FSn %</th>
+              <th class="px-3 py-2 text-right font-black">DMU (W)</th>
+            </tr>
+          </thead>
+          <tbody class="font-mono">
+            {% for f in z.filas %}
+            <tr class="border-t border-slate-100">
+              <td class="px-3 py-1.5 text-slate-400">{{ forloop.counter }}</td>
+              <td class="px-3 py-1.5 text-slate-800">{{ f.equipo }}</td>
+              <td class="px-3 py-1.5 text-right tabular-nums">{{ f.cantidad }}</td>
+              <td class="px-3 py-1.5 text-right tabular-nums">{{ f.pn_w|floatformat:0 }}</td>
+              <td class="px-3 py-1.5 text-right tabular-nums">{{ f.ff|floatformat:0 }}</td>
+              <td class="px-3 py-1.5 text-right tabular-nums">{{ f.cir_w|floatformat:0 }}</td>
+              <td class="px-3 py-1.5 text-right tabular-nums">{{ f.fs|floatformat:0 }}</td>
+              <td class="px-3 py-1.5 text-right font-black tabular-nums">{{ f.dmu_w|floatformat:1 }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="border-t-2 border-slate-300 bg-slate-50 font-black">
+              <td class="px-3 py-2" colspan="5">TOTALES</td>
+              <td class="px-3 py-2 text-right tabular-nums">{{ z.cir_w|floatformat:0 }}</td>
+              <td class="px-3 py-2">FFUn/FSn</td>
+              <td class="px-3 py-2 text-right tabular-nums">{{ z.dmu_w|floatformat:1 }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <p class="rounded-lg bg-slate-50 px-3 py-1.5 text-[11px] text-slate-600">FP {{ param_fp }} · <b>FDM = DMU/CIR = {{ z.fdm|floatformat:3 }}</b></p>
+        <p class="rounded-lg bg-slate-50 px-3 py-1.5 text-[11px] text-slate-600">DMU (kW) = {{ z.dmu_kw|floatformat:3 }}</p>
+        <p class="rounded-lg bg-slate-50 px-3 py-1.5 text-[11px] text-slate-600">DMU (kVA) = {{ z.dmu_kva|floatformat:2 }}</p>
+        <p class="rounded-lg bg-slate-50 px-3 py-1.5 text-[11px] text-slate-600">Demanda Requerida = <b>{{ z.dmu_kva|floatformat:2 }} kVA</b></p>
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- RESUMEN -->
+    <div class="mt-6 rounded-xl border border-slate-200 p-4">
+      <h3 class="text-xs font-black uppercase tracking-widest text-slate-500">Resumen de demandas por zona</h3>
+      <table class="mt-2 w-full text-left text-xs">
+        <thead class="bg-slate-50 uppercase text-slate-500"><tr><th class="px-3 py-1.5">Descripción</th><th class="px-3 py-1.5 text-right">DMU (kVA)</th></tr></thead>
+        <tbody class="font-mono">
+          {% for z in estado.zonas %}
+          <tr class="border-t border-slate-100"><td class="px-3 py-1.5">{{ z.nombre }}</td><td class="px-3 py-1.5 text-right tabular-nums">{{ z.dmu_kva|floatformat:2 }}</td></tr>
+          {% endfor %}
+          <tr class="border-t-2 border-slate-300 bg-slate-50 font-black"><td class="px-3 py-1.5">TOTALES</td><td class="px-3 py-1.5 text-right tabular-nums">{{ estado.dmu_kva|floatformat:2 }}</td></tr>
+        </tbody>
+      </table>
+      <p class="mt-2 text-right font-mono text-xl font-black text-emerald-700">{{ estado.kva_servicio|floatformat:0 }} kVA <span class="text-xs font-bold text-emerald-600">de servicio</span></p>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- GLOSARIO DE VARIABLES -->
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <h3 class="text-sm font-black uppercase tracking-widest text-slate-500">Leyenda: significado de cada variable</h3>
+    <dl class="mt-3 grid gap-2 sm:grid-cols-2">
+      {% for var, desc in glosario %}
+      <div class="rounded-lg bg-slate-50 px-3 py-2">
+        <dt class="font-mono text-xs font-black text-accent">{{ var }}</dt>
+        <dd class="text-xs text-slate-600">{{ desc }}</dd>
+      </div>
+      {% endfor %}
+    </dl>
   </section>
 
   {% if estado.filas %}
@@ -166,7 +584,7 @@
     <!-- BALANCE DE FASES -->
     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <h3 class="text-sm font-black uppercase tracking-widest text-slate-500">5 · Balance de fases</h3>
-      {% if estudio.servicio == '3F' and estado.fases %}
+      {% if estado.fases %}
       <div class="mt-4 space-y-3">
         {% for f in estado.fases %}
         <div class="flex items-center gap-3">
@@ -280,133 +698,35 @@
     <h3 class="text-sm font-black uppercase tracking-widest text-slate-500">10 · Tablero eléctrico TD-01</h3>
     {% if tablero.circuitos %}
     <div class="mt-4 overflow-auto rounded-xl border border-slate-200">
-      <table class="w-full min-w-[640px] text-left text-xs">
-        <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
-          <tr><th class="px-3 py-2">Circuito</th><th class="px-3 py-2">Carga</th><th class="px-3 py-2">Fase</th><th class="px-3 py-2 text-right">kVA</th><th class="px-3 py-2 text-right">A</th><th class="px-3 py-2 text-right">Breaker</th></tr>
+      <table class="w-full min-w-[540px] text-left text-xs">
+        <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400">
+          <tr><th class="px-3 py-1.5">Nº</th><th class="px-3 py-1.5">Carga</th><th class="px-3 py-1.5">Fase</th><th class="px-3 py-1.5 text-right" title="Corriente conectada = kVA con. × 1000 / V">A con.</th><th class="px-3 py-1.5 text-right">Breaker</th></tr>
         </thead>
         <tbody class="font-mono">
           {% for c in tablero.circuitos %}
           <tr class="border-t border-slate-100 hover:bg-amber-50/50">
-            <td class="px-3 py-1.5 font-black text-slate-700">{{ c.n }}</td>
-            <td class="px-3 py-1.5 text-slate-800">{{ c.equipo }} <span class="text-[10px] text-slate-400">({{ c.codigo }})</span></td>
+            <td class="px-3 py-1.5 text-slate-400">{{ c.n }}</td>
+            <td class="px-3 py-1.5 text-slate-800">{{ c.equipo }} <span class="text-[10px] text-slate-300">({{ c.codigo }})</span></td>
             <td class="px-3 py-1.5">{{ c.fase }}</td>
-            <td class="px-3 py-1.5 text-right tabular-nums">{{ c.kva|floatformat:2 }}</td>
-            <td class="px-3 py-1.5 text-right tabular-nums">{{ c.amp|floatformat:1 }}</td>
+            <td class="px-3 py-1.5 text-right tabular-nums text-slate-600">{{ c.amp_inst|floatformat:1 }}</td>
             <td class="px-3 py-1.5 text-right font-black text-accent">{{ c.breaker }} A</td>
           </tr>
           {% endfor %}
           <tr class="border-t-2 border-slate-200 bg-slate-50 font-black">
-            <td class="px-3 py-2" colspan="2">Principal {{ estudio.servicio }} · {{ estudio.voltaje_linea }} V</td>
+            <td class="px-3 py-2" colspan="2">Principal {{ estudio.servicio }} · {{ estudio.voltaje_linea }} V · {{ fases_disp.distribucion }}</td>
             <td class="px-3 py-2">Σ</td>
-            <td class="px-3 py-2 text-right tabular-nums">{{ tablero.kva_total|floatformat:2 }}</td>
             <td class="px-3 py-2 text-right tabular-nums">{{ estado.corriente|floatformat:1 }}</td>
             <td class="px-3 py-2 text-right text-accent">{{ tablero.principal }} A</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="mt-3 text-[11px] text-slate-400">Breakers estandarizados NEC 240.6 / EN 60898 (curva C). El principal protege al 125 % de la corriente de servicio.</p>
+    <p class="mt-3 text-[11px] text-slate-400">
+      Ramal × {{ tablero.factor_ramal|floatformat:0 }} % de la corriente conectada (NEC 210.20) · principal 125 % de la de servicio DMU (NEC 215.3).
+    </p>
     {% else %}
     <p class="mt-3 text-sm text-slate-500">Agrega cargas al inventario para generar el tablero.</p>
     {% endif %}
-  </section>
-
-  <!-- FICHA TÉCNICA / GUARDAR -->
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <h3 class="text-sm font-black uppercase tracking-widest text-slate-500">Ficha del estudio</h3>
-    <form method="post" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-      {% csrf_token %}
-      <input type="hidden" name="accion" value="guardar_ficha">
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nombre</span>
-        <input name="nombre" value="{{ estudio.nombre }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Servicio</span>
-        <select name="servicio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-          <option value="1F" {% if estudio.servicio == '1F' %}selected{% endif %}>Monofásico</option>
-          <option value="2F" {% if estudio.servicio == '2F' %}selected{% endif %}>Bifásico</option>
-          <option value="3F" {% if estudio.servicio == '3F' %}selected{% endif %}>Trifásico</option>
-        </select>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Voltaje (V)</span>
-        <input name="voltaje" value="{{ estudio.voltaje_linea }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Material conductor</span>
-        <select name="conductor_material" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-          {% for v, n in mat_options %}<option value="{{ v }}" {% if estudio.conductor_material == v %}selected{% endif %}>{{ n }}</option>{% endfor %}
-        </select>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Longitud línea (m)</span>
-        <input name="longitud" value="{{ estudio.longitud_linea|default:'' }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
-      </label>
-      <button type="submit" class="btn-cta px-4 py-2.5 text-sm sm:col-span-2 lg:col-span-1">
-        Guardar ficha
-      </button>
-    </form>
-  </section>
-
-  <!-- NUEVO ÍTEM LIBRE (se guarda también en el catálogo) -->
-  <section class="rounded-2xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
-    <h3 class="text-sm font-black uppercase tracking-widest text-slate-500">Nuevo ítem libre · se agrega al catálogo normativo</h3>
-    <p class="mt-1 text-xs text-slate-500">Define una carga desde cero; al guardarla se audita (HistorialCarga) y queda disponible para otros estudios.</p>
-    <form method="post" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {% csrf_token %}
-      <input type="hidden" name="accion" value="nuevo_item">
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Categoría</span>
-        <select name="categoria" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-          {% for cod, nom in cat_choices.items %}<option value="{{ cod }}">{{ nom }}</option>{% endfor %}
-        </select>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Equipo *</span>
-        <input name="equipo" required placeholder="Ej.: Aire acondicionado 12000 BTU"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Potencia</span>
-        <div class="flex gap-2">
-          <input name="potencia" value="0" type="number" step="0.01"
-                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
-          <select name="unidad" class="rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900">
-            <option>W</option><option>kW</option><option>VA</option><option>kVA</option><option>HP</option>
-          </select>
-        </div>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Fases (carga)</span>
-        <select name="fases" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-          <option value="1F">Monofásica</option>
-          <option value="2F">Bifásica</option>
-          <option value="3F">Trifásica</option>
-        </select>
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Cantidad</span>
-        <input name="cantidad" value="1" type="number" min="1"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FD %</span>
-        <input name="fd" value="100" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">FP</span>
-        <input name="fp" value="0.90" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-right font-mono text-sm text-slate-900">
-      </label>
-      <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Código (opcional)</span>
-        <input name="codigo" placeholder="ILU-LIB-001 (auto)"
-               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
-      </label>
-      <button type="submit" class="btn-cta px-4 py-2.5 text-sm sm:col-span-2 lg:col-span-1">
-        Crear + agregar al catálogo
-      </button>
-    </form>
   </section>
 
   <p class="text-center text-[11px] text-slate-500">
@@ -419,19 +739,73 @@
 <script>
 (function () {
   // Vista previa sin AJAX: al elegir una carga del catálogo se muestran sus
-  // valores normativos y se rellenan kW / FD / FP del formulario de alta.
+  // valores normativos (Pn/FFUn/FSn/FP) y se rellenan del formulario de alta.
   var meta = JSON.parse(document.getElementById('cargas-meta').textContent || '{}');
   var sel = document.getElementById('carga-select');
   var pre = document.getElementById('carga-preview');
   function actualizar() {
     var m = meta[sel.value];
-    if (!m) { pre.textContent = 'Selecciona una carga del catálogo para previsualizar sus valores (kW/FD/FP/fases) — sin AJAX.'; return; }
+    if (!m) { pre.textContent = 'Selecciona una carga del catálogo para previsualizar sus valores (Pn/FFUn/FSn/FP) — sin AJAX.'; return; }
     document.getElementById('carga-kw').value = m.kw;
-    document.getElementById('carga-fd').value = m.fd;
+    document.getElementById('carga-ff').value = 100;
+    document.getElementById('carga-fs').value = m.fd;
     document.getElementById('carga-fp').value = m.fp;
-    pre.textContent = 'Vista previa: ' + m.categoria + ' · ' + m.kw + ' kW · FD ' + m.fd + '% · FP ' + m.fp + ' · ' + (m.fases || '') + ' · ' + (m.voltaje || '');
+    pre.textContent = 'Vista previa: ' + m.categoria + ' · ' + m.kw + ' kW · FFUn 100% · FSn ' + m.fd + '% · FP ' + m.fp + ' · ' + (m.fases || '') + ' · ' + (m.voltaje || '');
   }
   if (sel) { sel.addEventListener('change', actualizar); }
+
+  // Voltaje recomendado según servicio (Monofásico 120 · Bifásico 120/240 · Trifásico 120/208).
+  var rec = { '1F': { 'v': 120, 'm': 1 }, '2F': { 'v': 120, 'm': 2 }, '3F': { 'v': 120, 'm': 1.732 } };
+  var selSrv = document.getElementById('id-servicio');
+  var inpVolt = document.getElementById('voltaje-ficha');
+  function actualizarVoltaje() {
+    var cfg = rec[selSrv.value] || rec['1F'];
+    var v = parseFloat(inpVolt.value) || 0;
+    document.getElementById('rec-voltaje').textContent = cfg.v + ' V';
+    if (v > 0) {
+      document.getElementById('rec-linea').textContent = Math.round(v * cfg.m) + ' V';
+    } else {
+      document.getElementById('rec-linea').textContent = '—';
+    }
+  }
+  if (selSrv && inpVolt) {
+    selSrv.addEventListener('change', actualizarVoltaje);
+    inpVolt.addEventListener('input', actualizarVoltaje);
+    actualizarVoltaje();
+  }
+
+  // Auto-recalculo: al modificar cualquier valor de una fila del inventario
+  // (Cant, Pn, FFUn, FSn, FP, fase, zona) se guarda tras una pausa y la página
+  // se recarga con los resultados CIR/DMU/FDM/DD/kVA/checklist actualizados.
+  var toast = document.getElementById('recalc-toast');
+  var enviando = false;
+  var pendiente = 0;
+  function depurar() {
+    if (enviando) return;
+    enviando = true;
+    if (toast) { toast.classList.remove('hidden'); toast.textContent = 'Recalculando…' + (pendiente > 1 ? ' (' + pendiente + ' filas)' : ''); }
+  }
+  document.querySelectorAll('form[data-fila]').forEach(function (form) {
+    var timer = null;
+    function programar() {
+      clearTimeout(timer);
+      timer = setTimeout(guardar, 800);
+    }
+    function guardar() {
+      if (enviando) { clearTimeout(timer); return; }
+      pendiente += 1;
+      depurar();
+      var accion = document.createElement('input');
+      accion.type = 'hidden';
+      accion.name = 'accion';
+      accion.value = 'actualizar_item';
+      form.appendChild(accion);
+      form.submit();
+    }
+    ['input', 'change'].forEach(function (ev) {
+      form.addEventListener(ev, programar, true);
+    });
+  });
 })();
 </script>
 {% endblock %}

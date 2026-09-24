@@ -3,6 +3,16 @@ from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 
+# Estratos de consumo residencial — EEQ Sección A-11.02 (Tabla A-11.02_2).
+ESTRATO_CHOICES = [('A1', 'A1 (501–900 kWh/mes)'), ('A', 'A (351–500)'),
+                   ('B', 'B (251–350)'), ('C', 'C (151–250)'),
+                   ('D', 'D (101–150)'), ('E', 'E (0–100)')]
+
+# Factores de coincidencia FCn para 1–4 usuarios — EEQ Apéndice A-11-B1.
+FC_COINCIDENCIA = {1: Decimal('100.00'), 2: Decimal('80.00'),
+                   3: Decimal('73.3'), 4: Decimal('70.00'),
+                   5: Decimal('67.5')}
+
 
 class ContactLead(models.Model):
     STATUS_NEW = 'new'
@@ -261,6 +271,38 @@ class ParametroNorma(models.Model):
         return f'{self.clave} = {self.valor} {self.unidad} ({self.fuente} {self.version})'
 
 
+class DMDResidencial(models.Model):
+    """Tabla A-11.03_1 — Demanda Máxima Diversificada (DMD) en kW según estrato
+    de consumo (A1..E) y número de usuarios (Fuente: EEQ Sección A-11, v08).
+    Para 1–4 usuarios la DMD = n × FCn × DMU (Apéndice A-11-B1); la fila de
+    n=1 equivale a la DMU del estrato. Para n≥5 la DMD = M(n) × N(estrato)."""
+    numero_usuarios = models.PositiveIntegerField('Nº usuarios')
+    estrato = models.CharField('Estrato', max_length=2, choices=ESTRATO_CHOICES)
+    dmd_kw = models.DecimalField('DMD (kW)', max_digits=9, decimal_places=3)
+
+    class Meta:
+        ordering = ['estrato', 'numero_usuarios']
+        unique_together = ('numero_usuarios', 'estrato')
+        verbose_name_plural = 'Demandas máximas diversificadas residenciales (A-11.03_1)'
+
+    def __str__(self):
+        return f'DMD {self.estrato} · {self.numero_usuarios} usuarios = {self.dmd_kw} kW'
+
+
+class FactorDiversidad(models.Model):
+    """Apéndice A-11-D1 — Factor de diversidad (FD) para demandas máximas
+    diversificadas de usuarios comerciales, dependiente de N (1→1.00 … 50+→3.10)."""
+    numero_usuarios = models.PositiveIntegerField('Nº abonados (N)')
+    factor = models.DecimalField('Factor de diversidad (FD)', max_digits=5, decimal_places=3)
+
+    class Meta:
+        ordering = ['numero_usuarios']
+        verbose_name_plural = 'Factores de diversidad comerciales (A-11-D1)'
+
+    def __str__(self):
+        return f'FD(N={self.numero_usuarios}) = {self.factor}'
+
+
 class EstudioCarga(models.Model):
     """Estudio de cargas persistente (inventario + motor de demanda)."""
     nombre = models.CharField(max_length=120)
@@ -268,15 +310,55 @@ class EstudioCarga(models.Model):
                                 related_name='estudios')
     descripcion = models.CharField(max_length=220, blank=True)
     creado_por = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True)
-    voltaje_linea = models.DecimalField('Voltaje línea (V)', max_digits=6, decimal_places=1, default=Decimal('220.0'))
+    voltaje_fase = models.DecimalField('Voltaje fase–neutro (V)', max_digits=6, decimal_places=1, default=Decimal('120.0'))
     servicio = models.CharField('Servicio', max_length=20,
                           choices=[('1F', 'Monofásico'), ('2F', 'Bifásico'), ('3F', 'Trifásico')],
                           default='1F')
+
+    @property
+    def voltaje_linea(self):
+        """Voltaje entre líneas según sistema: 1F→fase, 2F→2·fase, 3F→√3·fase."""
+        vf = self.voltaje_fase
+        if self.servicio == '3F':
+            return (vf * Decimal('1.732')).quantize(Decimal('0.1'))
+        if self.servicio == '2F':
+            return vf * Decimal('2')
+        return vf
     caida_tension_max = models.DecimalField('Caída de tensión máx %', max_digits=4, decimal_places=2, null=True, blank=True)
     conductor_material = models.CharField('Material conductor', max_length=6,
                                            choices=[('Cu', 'Cobre'), ('Al', 'Aluminio')], default='Cu')
     longitud_linea = models.DecimalField('Longitud de línea (m)', max_digits=7,
                                           decimal_places=1, null=True, blank=True)
+    # Metadatos del formato EEQ "Planilla para la determinación de demandas"
+    actividad_tipo = models.CharField('Actividad tipo', max_length=60, blank=True)          # COMERCIAL
+    localizacion = models.CharField('Localización', max_length=180, blank=True)             # Av. Shyris Edif. Iqon
+    numero_usuarios = models.PositiveIntegerField('Número de usuarios', default=1)
+    fecha_estudio = models.DateField('Fecha del estudio', default=timezone.localdate)
+    ingeniero_responsable = models.CharField('Ingeniero responsable', max_length=120, blank=True)  # ING. ...
+    registro_lp = models.CharField('Registro LP', max_length=60, blank=True)                # LP: 1034-2021-...
+    expediente_eeq = models.CharField('Nº expediente EEQ', max_length=60, blank=True)      # EEQ-2022-I.2163
+    # ===== Metodología EEQ Sección A-11 (v08) =====
+    # A-11.03: tipo de determinación de demanda (residencial por DMD / comercial por DMU·N/FD)
+    tipo_estudio = models.CharField('Tipo de estudio', max_length=3,
+                    choices=[('RES', 'Residencial (DMD por estrato)'),
+                             ('COM', 'Comercial/Industrial (DMU × N / FD)')],
+                    default='COM')
+    estrato = models.CharField('Estrato de consumo', max_length=2,
+                    choices=ESTRATO_CHOICES, blank=True, null=True)          # A-11.02 Tabla A-11.02_2
+    # A-11.06: zona + usuarios proyectados para el período de diseño
+    zona_urbano_rural = models.CharField('Zona', max_length=3,
+                    choices=[('URB', 'Urbano'), ('RUR', 'Rural')], default='URB')
+    usuarios_proyectados = models.PositiveIntegerField('Usuarios proyectados (período diseño)', default=0)
+    # A-11.04: componentes de la Demanda de Diseño
+    dap_kw = models.DecimalField('DAP — Alumbrado público (kW)', max_digits=8, decimal_places=3,
+                                 default=Decimal('0.000'))
+    es_camara_transformacion = models.BooleanField('Cámara de transformación (DPT 1.0 %)', default=False)
+    # A-11.03 b) / Ec. (3): N abonados y factor de diversidad FD del punto de red
+    n_abonados_comercial = models.PositiveIntegerField('N — Abonados que inciden en el punto', default=1)
+    fd_factor_diversidad = models.DecimalField('FD factor de diversidad (auto si vacío)',
+                                               max_digits=5, decimal_places=3, null=True, blank=True)
+    # A-11.07: S/E con cambiador de taps bajo carga (define límites de caída)
+    subestacion_taps = models.BooleanField('Subestación con taps bajo carga', default=False)
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 
@@ -288,14 +370,33 @@ class EstudioCarga(models.Model):
         return self.nombre
 
 
+class Zona(models.Model):
+    """Zona / circuito / tablero de un estudio (cada zona genera su planilla EEQ)."""
+    estudio = models.ForeignKey(EstudioCarga, on_delete=models.CASCADE, related_name='zonas')
+    nombre = models.CharField('Zona', max_length=120)        # COCINA · BAR · RECEPCION...
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['orden', 'id']
+        verbose_name_plural = 'Zonas del estudio'
+
+    def __str__(self):
+        return f'{self.estudio.nombre} · {self.nombre}'
+
+
 class ItemEstudio(models.Model):
     """Ítem del inventario de cargas (asociado al catálogo normativo, ajustable)."""
     estudio = models.ForeignKey(EstudioCarga, on_delete=models.CASCADE, related_name='items')
     carga = models.ForeignKey(CargaNormativa, on_delete=models.PROTECT, related_name='en_estudios')
+    zona = models.ForeignKey(Zona, on_delete=models.SET_NULL, null=True, blank=True,
+                             related_name='items')
     cantidad = models.PositiveIntegerField(default=1)
     potencia_kw = models.DecimalField('Potencia kW', max_digits=8, decimal_places=3)
     factor_demanda = models.DecimalField('FD %', max_digits=6, decimal_places=2)
     factor_potencia = models.DecimalField('FP', max_digits=5, decimal_places=3)
+    # Factores EEQ: FFUn (funcionamiento unitario) y FSn (servicio/simultaneidad)
+    ffun = models.DecimalField('FFUn % (funcionamiento unitario)', max_digits=6, decimal_places=2, default=Decimal('100.00'))
+    fsn = models.DecimalField('FSn % (servicio/simultaneidad)', max_digits=6, decimal_places=2, default=Decimal('100.00'))
     fase = models.CharField('Fase destino', max_length=1, blank=True,
                        choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('', 'Auto')], default='')
 
@@ -303,13 +404,35 @@ class ItemEstudio(models.Model):
         ordering = ['id']
         verbose_name_plural = 'Ítems del estudio'
 
+    def save(self, *args, **kwargs):
+        # FD% (total) se mantiene sincronizado = FFUn × FSn / 100 (compatibilidad)
+        self.factor_demanda = self.ffun * self.fsn / Decimal('100')
+        self.factor_demanda = self.factor_demanda.quantize(Decimal('0.01'))
+        super().save(*args, **kwargs)
+
+    @property
+    def potencia_w(self):
+        """Potencia nominal unitaria en vatios."""
+        return self.potencia_kw * Decimal('1000')
+
+    @property
+    def cir_w(self):
+        """CIR — Carga Instalada Resultante = Pn × Cant × FFUn."""
+        return self.potencia_w * self.cantidad * self.ffun / Decimal('100')
+
+    @property
+    def dmu_w(self):
+        """DMU — Demanda Máxima Unitaria = CIR × FSn."""
+        return self.cir_w * self.fsn / Decimal('100')
+
     @property
     def potencia_total_kw(self):
         return self.potencia_kw * self.cantidad
 
     @property
     def demanda_kw(self):
-        return self.potencia_kw * self.cantidad * self.factor_demanda / Decimal('100')
+        """Demanda del ítem = DMU(W)/1000."""
+        return self.dmu_w / Decimal('1000')
 
     def __str__(self):
         return f'{self.carga.codigo} × {self.cantidad}'

@@ -25,17 +25,53 @@
     </label>
     <div class="grid grid-cols-2 gap-4">
       <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de estudio (EEQ A-11.02)</span>
+        <select name="tipo_estudio" id="id-tipo-estudio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="COM" selected>Comercial</option>
+          <option value="RES">Residencial</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Zona</span>
+        <select name="zona_urbano_rural" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+          <option value="URB" selected>Urbana</option>
+          <option value="RUR">Rural</option>
+        </select>
+      </label>
+    </div>
+    <label class="block" id="grupo-estrato">
+      <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Estrato de consumo (RES)</span>
+      <select name="estrato" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+        <option value="">— Selecciona el estrato del Apéndice A-11-A (mapa) —</option>
+        <option value="A1">A1 · 501–900 kWh/mes</option>
+        <option value="A">A · 351–500</option>
+        <option value="B">B · 251–350</option>
+        <option value="C">C · 151–250</option>
+        <option value="D">D · 101–150</option>
+        <option value="E">E · 0–100</option>
+      </select>
+      <span class="mt-1 block text-[10px] text-slate-400">Se asigna por el mapa del sitio (A-11-A) o con justificativo del diseñador.</span>
+    </label>
+    <div class="grid grid-cols-2 gap-4">
+      <label class="block">
         <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Servicio</span>
-        <select name="servicio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+        <select name="servicio" id="id-servicio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
           <option value="1F">Monofásico (1F)</option>
           <option value="2F">Bifásico (2F)</option>
           <option value="3F">Trifásico (3F)</option>
         </select>
       </label>
       <label class="block">
-        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Voltaje de línea (V)</span>
-        <input name="voltaje" value="220" type="number" step="1"
+        <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Voltaje fase–neutro (V)</span>
+        <input name="voltaje" id="voltaje-form" value="120" type="number" step="1" list="datalist-voltajes"
                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-right text-sm text-slate-900">
+        <datalist id="datalist-voltajes">
+          <option value="110"><option value="120"><option value="127"><option value="220">
+        </datalist>
+        <span class="mt-1 block text-[10px] text-slate-400">
+          Recomendado: <span class="font-mono font-bold text-slate-600" id="rec-voltaje-form">120 V</span> fase–neutro
+          → línea <span class="font-mono font-bold text-slate-600" id="rec-linea-form">120 V</span>
+        </span>
       </label>
     </div>
     <button type="submit" class="btn-cta w-full px-6 py-3 text-sm">
@@ -43,4 +79,27 @@
     </button>
   </form>
 </div>
+<script>
+  (function () {
+    var rec = { '1F': { 'v': 120, 'm': 1 }, '2F': { 'v': 120, 'm': 2 }, '3F': { 'v': 120, 'm': 1.732 } };
+    var sel = document.getElementById('id-servicio');
+    var inp = document.getElementById('voltaje-form');
+    var selTipo = document.getElementById('id-tipo-estudio');
+    var grupoEst = document.getElementById('grupo-estrato');
+    function toggleEstrato() {
+      if (grupoEst) { grupoEst.style.display = (selTipo && selTipo.value === 'RES') ? 'block' : 'none'; }
+    }
+    if (selTipo) selTipo.addEventListener('change', toggleEstrato);
+    document.addEventListener('DOMContentLoaded', toggleEstrato);
+    function actualizar() {
+      var cfg = rec[sel.value] || rec['1F'];
+      var v = parseFloat(inp.value) || 0;
+      document.getElementById('rec-voltaje-form').textContent = cfg.v + ' V';
+      document.getElementById('rec-linea-form').textContent = (v > 0) ? Math.round(v * cfg.m) + ' V' : '—';
+    }
+    sel.addEventListener('change', actualizar);
+    inp.addEventListener('input', actualizar);
+    actualizar();
+  })();
+</script>
 {% endblock %}

@@ -25,4 +25,5 @@ urlpatterns = [
     path('estudios/<int:estudio_id>/', views.estudio_detail, name='estudio_detail'),
     path('estudios/<int:estudio_id>/eliminar/', views.estudio_delete, name='estudio_delete'),
     path('estudios/<int:estudio_id>/imprimir/', views.estudio_print, name='estudio_print'),
+    path('estudios/<int:estudio_id>/exportar/', views.estudio_export_excel, name='estudio_export_excel'),
 ]
